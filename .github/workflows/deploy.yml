@@ -1,0 +1,53 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # erlaubt manuelles Auslösen im Actions-Tab
+
+# Rechte, die die Pages-Deployment-Action braucht
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Nie zwei Deployments gleichzeitig; laufende abbrechen
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.0          # muss zu deiner Editor-Version passen
+          use-dotnet: false       # GDScript-Projekt, kein .NET noetig
+          include-templates: true # Export-Templates mitinstallieren
+
+      - name: Web-Export bauen
+        run: |
+          mkdir -p build/web
+          godot --headless --import
+          godot --headless --export-release "Web" build/web/index.html
+
+      - name: Artefakt hochladen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Auf GitHub Pages deployen
+        id: deployment
+        uses: actions/deploy-pages@v4
