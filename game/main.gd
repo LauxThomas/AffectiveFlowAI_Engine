@@ -21,6 +21,7 @@ const OB_PRESETS := [
 ]
 
 # ─── State ─────────────────────────────────────────────────
+var _base_speed := START_SPEED   # natural pre-adaptation speed; final speed = _base_speed * params.speed_mult
 var speed := START_SPEED
 var score := 0.0
 var hits := 0
@@ -31,6 +32,7 @@ var _scroll := 0.0
 var _player_y := 0.0
 var _lanes: Array[float] = []
 var _open_zone: Node2D = null
+var _hint_free_lane: int = -1
 
 @onready var player: Node2D = $Player
 @onready var score_label: Label = $UI/ScoreLabel
@@ -54,7 +56,10 @@ func _lane_x(i: int, w: float) -> float:
 	return w * (float(i) + 0.5) / float(LANE_COUNT)
 
 func _process(delta: float) -> void:
-	speed = minf(speed + SPEED_GAIN * delta, MAX_SPEED)
+	var params: AdaptationParams = AffectiveEngine.get_params()
+
+	_base_speed = minf(_base_speed + SPEED_GAIN * delta, MAX_SPEED)
+	speed = _base_speed * params.speed_mult
 	var move := speed * delta
 	score += move * SCORE_RATE
 	_scroll += move
@@ -76,8 +81,8 @@ func _process(delta: float) -> void:
 	# Hindernisse
 	_dist_ob -= move
 	if _dist_ob <= 0.0:
-		_spawn_obstacles()
-		var gap: float = maxf(240.0, speed * 0.55)
+		_spawn_obstacles(params.difficulty)
+		var gap: float = maxf(240.0, speed * 0.55) / maxf(params.spawn_mult, 0.01)
 		_dist_ob = gap + randf_range(40.0, 220.0)
 
 	# Münzen
@@ -86,12 +91,18 @@ func _process(delta: float) -> void:
 		_spawn_coin()
 		_dist_coin = randf_range(150.0, 300.0)
 
+	if player.has_method("set_hint_lane"):
+		player.set_hint_lane(_hint_free_lane if params.hint_level > 0 else -1)
+
 	_update_ui()
 	queue_redraw()
 
-func _spawn_obstacles() -> void:
-	# 1 oder 2 Lanes blockieren -> es bleibt IMMER mind. 1 Lane frei
-	var count := 1 if randf() < 0.6 else 2
+func _spawn_obstacles(difficulty: int) -> void:
+	# 1 oder 2 Lanes blockieren -> es bleibt IMMER mind. 1 Lane frei.
+	# 2-lane chance scales with the adaptation difficulty tier (denser/harder
+	# when the estimator pushes toward BOREDOM's higher difficulty).
+	var two_lane_chance: float = clampf(0.2 + 0.15 * float(difficulty), 0.1, 0.7)
+	var count := 2 if randf() < two_lane_chance else 1
 	var lanes: Array[int] = [0, 1, 2]
 	lanes.shuffle()
 	for k in count:
@@ -105,6 +116,7 @@ func _spawn_obstacles() -> void:
 		ob.add_to_group("decision_zone")
 		ob.hit.connect(_on_obstacle_hit.bind(ob))
 		add_child(ob)
+	_hint_free_lane = lanes[count] if count < LANE_COUNT else -1
 
 func _spawn_coin() -> void:
 	var lane := randi() % LANE_COUNT
@@ -118,7 +130,7 @@ func _on_obstacle_hit(ob: Obstacle) -> void:
 	_close_zone(ob)
 	AffectiveEngine.report_event(AffectiveTypes.EventType.HIT, {})
 	hits += 1
-	speed = maxf(speed * HIT_FACTOR, MIN_SPEED)   # abbremsen statt stoppen
+	_base_speed = maxf(_base_speed * HIT_FACTOR, MIN_SPEED)   # abbremsen statt stoppen
 	if player.has_method("flash"):
 		player.flash()
 	_update_ui()

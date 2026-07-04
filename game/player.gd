@@ -17,6 +17,7 @@ var _touch_points: Array[Vector2] = []
 var _touch_start_usec := 0
 var _last_input_usec := 0
 var _idle_reported := false
+var _hint_lane := -1
 
 func setup(lanes: Array[float], start_lane: int) -> void:
 	lane_x = lanes
@@ -24,6 +25,9 @@ func setup(lanes: Array[float], start_lane: int) -> void:
 	position.x = lane_x[current_lane]
 	_target_x = position.x
 	_last_input_usec = Time.get_ticks_usec()
+
+func set_hint_lane(lane: int) -> void:
+	_hint_lane = lane
 
 func _input(event: InputEvent) -> void:
 	# Tastatur: A/D oder Pfeiltasten
@@ -138,3 +142,14 @@ func _draw() -> void:
 	draw_circle(Vector2(0, -40 + bob), 14, skin)
 	# Mütze
 	draw_rect(Rect2(-14, -54 + bob, 28, 10), Color("d94f4f"))
+
+	_draw_hint_beacon()
+
+# Scaffolding hint (AdaptationParams.hint_level > 0): a pulsing beacon over
+# the safe lane, positioned relative to this node's own lane_x table.
+func _draw_hint_beacon() -> void:
+	if _hint_lane < 0 or _hint_lane >= lane_x.size() or _hint_lane == current_lane:
+		return
+	var offset_x: float = lane_x[_hint_lane] - position.x
+	var pulse := 0.6 + 0.4 * sin(_run_t * 6.0)
+	draw_circle(Vector2(offset_x, -90.0), 16.0 * pulse, Color(0.3, 0.9, 0.5, 0.8))

@@ -58,3 +58,18 @@ shape, personalized input. Verified end-to-end: ran headless twice back to
 back, confirmed `baseline.json` is written (~7.5s cadence) and correctly
 reloaded/continued-adapting on the second run (mean/variance shifted as
 expected with more accumulated samples, no errors).
+
+## C6 — RuleBasedPolicy live in gameplay
+Added `IAdaptationPolicy`/`RuleBasedPolicy`: targets a FLOW band, rate-limits
+speed/spawn drift per tick (smooth, not jumpy), cooldowns on hint increments,
+slow long-term progression while sustained in FLOW. `AffectiveEngine.get_params()`
+now returns live values. `main.gd`'s original speed control migrates to
+`_base_speed` (the natural pre-adaptation accel/hit-slowdown), with the final
+`speed` = `_base_speed * params.speed_mult`; obstacle spawn gap divides by
+`params.spawn_mult`; the 1-vs-2-lane block chance now scales with
+`params.difficulty`. `player.gd` gained a pulsing hint beacon over the safe
+lane when `hint_level > 0`, driven by a lane computed in `main.gd`'s spawn
+logic. No game-over design preserved throughout. Verified via headless
+import, Web export, and a 12s runtime smoke test (with no player input, the
+stationary player accumulates hits, which exercised the OVERWHELM/hint path
+under real conditions) - all clean.

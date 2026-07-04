@@ -32,6 +32,7 @@ var _telemetry: TelemetryCollector = TelemetryCollector.new()
 var _window: FeatureWindow = FeatureWindow.new()
 var _baseline: UserBaseline
 var _model: ICognitiveLoadModel
+var _policy: IAdaptationPolicy = RuleBasedPolicy.new()
 var _last_tick_usec: int = 0
 var _last_features: Dictionary = {}
 var _last_load: float = 0.0
@@ -95,6 +96,14 @@ func _on_tick() -> void:
 	if _pending_state_ticks >= MIN_DWELL_TICKS and _pending_state != _current_state:
 		_current_state = _pending_state
 		state_changed.emit(_current_state)
+
+	# Two independent consumers (main.gd via get_params(), the HUD via this
+	# signal) each get their own duplicated copy - never the shared instance.
+	var next_params: AdaptationParams = _policy.decide(_current_state, _last_load, TICK_INTERVAL)
+	var params_changed_flag := not next_params.is_close_to(_current_params, 0.01)
+	_current_params = next_params
+	if params_changed_flag:
+		params_changed.emit(_current_params.duplicate_params())
 
 	_ticks_since_save += 1
 	if _ticks_since_save >= BASELINE_SAVE_INTERVAL_TICKS:
