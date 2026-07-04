@@ -34,3 +34,16 @@ events each tick and re-extracts the feature vector. No estimator yet (state
 is still hardcoded FLOW, that's C4) - this commit is purely "raw telemetry in,
 normalized numbers out." The Debug HUD now shows a live bar per feature,
 visibly reacting to swipe speed/hesitation/hits/idling in real time.
+
+## C4 — HeuristicLoadModel + dwell-gated state
+Added `ICognitiveLoadModel` (swappable seam) and `HeuristicLoadModel`: fuses
+the normalized features into a Cognitive Load Index via documented weights,
+squashes through a sigmoid to get `load`, and classifies BOREDOM/FLOW/OVERWHELM
+from load level + idle ratio (a documented v1 simplification of the full
+challenge/skill 2D balance, which needs a difficulty history that only exists
+once C6 wires AdaptationParams into gameplay). No personal baseline yet (C5)
+- features feed the formula directly. `AffectiveEngine` now dwell-gates state
+transitions (a predicted state must hold for ~600ms before it's accepted),
+satisfying "sustained condition, not per-frame flicker" without a full HMM.
+The Debug HUD's state label now really changes color, and shows a live load
+meter + confidence percentage (confidence scales with window sample count).

@@ -19,6 +19,23 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "FLOW"
 
+[node name="LoadRow" type="HBoxContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/VBoxContainer/LoadRow"]
+layout_mode = 2
+text = "Load:"
+
+[node name="LoadMeter" type="ProgressBar" parent="Panel/VBoxContainer/LoadRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+max_value = 100.0
+show_percentage = false
+
+[node name="ConfidenceLabel" type="Label" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "Confidence: 0%"
+
 [node name="ParamsLabel" type="Label" parent="Panel/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18

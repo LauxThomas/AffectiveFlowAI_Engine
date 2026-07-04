@@ -17,12 +17,22 @@ signal params_changed(new_params: AdaptationParams)
 # session and never piles up missed ticks after a frame hitch.
 const TICK_INTERVAL := 0.15
 
+# A predicted state must persist this many ticks (~600ms) before it's
+# accepted as the new current_state - satisfies "sustained condition, not a
+# per-frame flicker" without a full HMM (spec's own dwell-gated alternative).
+const MIN_DWELL_TICKS := 4
+
 var _current_state: AffectiveTypes.CognitiveState = AffectiveTypes.CognitiveState.FLOW
 var _current_params: AdaptationParams = AdaptationParams.new()
 var _telemetry: TelemetryCollector = TelemetryCollector.new()
 var _window: FeatureWindow = FeatureWindow.new()
+var _model: ICognitiveLoadModel = HeuristicLoadModel.new()
 var _last_tick_usec: int = 0
 var _last_features: Dictionary = {}
+var _last_load: float = 0.0
+var _last_confidence: float = 0.0
+var _pending_state: AffectiveTypes.CognitiveState = AffectiveTypes.CognitiveState.FLOW
+var _pending_state_ticks: int = 0
 
 func _ready() -> void:
 	_last_tick_usec = Time.get_ticks_usec()
@@ -48,8 +58,30 @@ func debug_event_count() -> int:
 func debug_features() -> Dictionary:
 	return _last_features
 
+func debug_load() -> float:
+	return _last_load
+
+func debug_confidence() -> float:
+	return _last_confidence
+
 func _on_tick() -> void:
 	var new_events: Array[Dictionary] = _telemetry.events_since(_last_tick_usec)
 	_window.push_events(new_events)
 	_last_features = _window.extract()
+
+	var prediction: Dictionary = _model.predict(_last_features)
+	var predicted_state: AffectiveTypes.CognitiveState = prediction.get("state")
+	_last_load = float(prediction.get("load", 0.0))
+	_last_confidence = float(prediction.get("confidence", 0.0))
+
+	if predicted_state == _pending_state:
+		_pending_state_ticks += 1
+	else:
+		_pending_state = predicted_state
+		_pending_state_ticks = 1
+
+	if _pending_state_ticks >= MIN_DWELL_TICKS and _pending_state != _current_state:
+		_current_state = _pending_state
+		state_changed.emit(_current_state)
+
 	_last_tick_usec = Time.get_ticks_usec()
