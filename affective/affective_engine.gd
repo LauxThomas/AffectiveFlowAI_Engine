@@ -22,19 +22,27 @@ const TICK_INTERVAL := 0.15
 # per-frame flicker" without a full HMM (spec's own dwell-gated alternative).
 const MIN_DWELL_TICKS := 4
 
+# How often the per-user baseline is flushed to disk - frequent enough that a
+# "quit and relaunch" manual test sees the carried-over baseline quickly.
+const BASELINE_SAVE_INTERVAL_TICKS := 50   # ~7.5s at 150ms/tick
+
 var _current_state: AffectiveTypes.CognitiveState = AffectiveTypes.CognitiveState.FLOW
 var _current_params: AdaptationParams = AdaptationParams.new()
 var _telemetry: TelemetryCollector = TelemetryCollector.new()
 var _window: FeatureWindow = FeatureWindow.new()
-var _model: ICognitiveLoadModel = HeuristicLoadModel.new()
+var _baseline: UserBaseline
+var _model: ICognitiveLoadModel
 var _last_tick_usec: int = 0
 var _last_features: Dictionary = {}
 var _last_load: float = 0.0
 var _last_confidence: float = 0.0
 var _pending_state: AffectiveTypes.CognitiveState = AffectiveTypes.CognitiveState.FLOW
 var _pending_state_ticks: int = 0
+var _ticks_since_save: int = 0
 
 func _ready() -> void:
+	_baseline = UserBaseline.load_or_create()
+	_model = HeuristicLoadModel.new(_baseline)
 	_last_tick_usec = Time.get_ticks_usec()
 	var tick_timer := Timer.new()
 	tick_timer.wait_time = TICK_INTERVAL
@@ -42,6 +50,10 @@ func _ready() -> void:
 	tick_timer.autostart = true
 	add_child(tick_timer)
 	tick_timer.timeout.connect(_on_tick)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_baseline.save()
 
 func report_event(event_type: AffectiveTypes.EventType, payload: Dictionary) -> void:
 	_telemetry.record(event_type, payload)
@@ -83,5 +95,10 @@ func _on_tick() -> void:
 	if _pending_state_ticks >= MIN_DWELL_TICKS and _pending_state != _current_state:
 		_current_state = _pending_state
 		state_changed.emit(_current_state)
+
+	_ticks_since_save += 1
+	if _ticks_since_save >= BASELINE_SAVE_INTERVAL_TICKS:
+		_baseline.save()
+		_ticks_since_save = 0
 
 	_last_tick_usec = Time.get_ticks_usec()

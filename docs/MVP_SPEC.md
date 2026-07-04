@@ -47,3 +47,14 @@ transitions (a predicted state must hold for ~600ms before it's accepted),
 satisfying "sustained condition, not per-frame flicker" without a full HMM.
 The Debug HUD's state label now really changes color, and shows a live load
 meter + confidence percentage (confidence scales with window sample count).
+
+## C5 — UserBaseline (per-user z-scoring)
+Added `UserBaseline`: EWMA mean/variance per feature, epsilon-guarded so a
+near-zero-variance early session can't blow up a z-score, persisted to
+`user://baseline.json` and reloaded at startup. `HeuristicLoadModel` now
+fuses clamped z-scores (deviation from this player's own rolling norm)
+instead of the raw fixed-range-normalized features from C4 - same formula
+shape, personalized input. Verified end-to-end: ran headless twice back to
+back, confirmed `baseline.json` is written (~7.5s cadence) and correctly
+reloaded/continued-adapting on the second run (mean/variance shifted as
+expected with more accumulated samples, no errors).
