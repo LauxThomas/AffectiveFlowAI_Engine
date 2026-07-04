@@ -8,6 +8,7 @@ const SPEED_GAIN  := 14.0     # wird über Zeit schneller
 const HIT_FACTOR  := 0.6      # speed *= HIT_FACTOR bei Treffer
 const MIN_SPEED   := 190.0    # Untergrenze -> stoppt nie
 const SCORE_RATE  := 0.02
+const DECISION_ZONE_Y := 300.0   # px lead distance above the player row
 
 const OBSTACLE := preload("res://game/obstacle.tscn")
 const COIN     := preload("res://game/coin.tscn")
@@ -29,6 +30,7 @@ var _dist_coin := 220.0
 var _scroll := 0.0
 var _player_y := 0.0
 var _lanes: Array[float] = []
+var _open_zone: Node2D = null
 
 @onready var player: Node2D = $Player
 @onready var score_label: Label = $UI/ScoreLabel
@@ -44,6 +46,8 @@ func _ready() -> void:
 	player.position = Vector2(_lanes[1], _player_y)
 	if player.has_method("setup"):
 		player.setup(_lanes, 1)
+	if player.has_signal("lane_switched"):
+		player.lane_switched.connect(_on_player_lane_switched)
 	_update_ui()
 
 func _lane_x(i: int, w: float) -> float:
@@ -61,8 +65,12 @@ func _process(delta: float) -> void:
 		var n := node as Node2D
 		if n == null:
 			continue
+		var prev_y := n.position.y
 		n.position.y += move
+		if n.is_in_group("decision_zone"):
+			_update_zone_tracking(n, prev_y, n.position.y)
 		if n.position.y > vp.y + 160.0:
+			_close_zone(n)   # "avoided harmlessly" resolution path
 			n.queue_free()
 
 	# Hindernisse
@@ -94,7 +102,8 @@ func _spawn_obstacles() -> void:
 		ob.body_height = float(p.h)
 		ob.position = Vector2(_lanes[lane], -float(p.h))
 		ob.add_to_group("scroll")
-		ob.hit.connect(_on_obstacle_hit)
+		ob.add_to_group("decision_zone")
+		ob.hit.connect(_on_obstacle_hit.bind(ob))
 		add_child(ob)
 
 func _spawn_coin() -> void:
@@ -105,7 +114,9 @@ func _spawn_coin() -> void:
 	c.collected.connect(_on_coin_collected)
 	add_child(c)
 
-func _on_obstacle_hit() -> void:
+func _on_obstacle_hit(ob: Obstacle) -> void:
+	_close_zone(ob)
+	AffectiveEngine.report_event(AffectiveTypes.EventType.HIT, {})
 	hits += 1
 	speed = maxf(speed * HIT_FACTOR, MIN_SPEED)   # abbremsen statt stoppen
 	if player.has_method("flash"):
@@ -115,6 +126,46 @@ func _on_obstacle_hit() -> void:
 func _on_coin_collected() -> void:
 	coins += 1
 	_update_ui()
+
+# ─── Decision zone: reaction latency + hesitation ──────────
+# v1 simplification: tracks one open zone at a time via Node metadata
+# (obstacle.gd/answer_token.gd stay untouched). Spawn gaps are wider than
+# DECISION_ZONE_Y, so overlapping zones are rare; the rare case is skipped
+# defensively rather than handled.
+func _update_zone_tracking(n: Node2D, prev_y: float, new_y: float) -> void:
+	var threshold: float = _player_y - DECISION_ZONE_Y
+	if prev_y < threshold and new_y >= threshold and not n.has_meta("_zone_entered_usec"):
+		if _open_zone != null:
+			return
+		n.set_meta("_zone_entered_usec", Time.get_ticks_usec())
+		n.set_meta("_zone_first_input_usec", 0)
+		n.set_meta("_zone_last_dir", 0)
+		n.set_meta("_zone_reversals", 0)
+		_open_zone = n
+
+func _on_player_lane_switched(dir: int, usec: int) -> void:
+	if _open_zone == null:
+		return
+	var last_dir: int = int(_open_zone.get_meta("_zone_last_dir"))
+	if last_dir != 0 and dir == -last_dir:
+		_open_zone.set_meta("_zone_reversals", int(_open_zone.get_meta("_zone_reversals")) + 1)
+	_open_zone.set_meta("_zone_last_dir", dir)
+	if int(_open_zone.get_meta("_zone_first_input_usec")) == 0:
+		_open_zone.set_meta("_zone_first_input_usec", usec)
+
+func _close_zone(n: Node2D) -> void:
+	if not n.has_meta("_zone_entered_usec"):
+		return
+	var entered_usec: int = int(n.get_meta("_zone_entered_usec"))
+	var first_input_usec: int = int(n.get_meta("_zone_first_input_usec"))
+	var latency_usec: int = (first_input_usec - entered_usec) if first_input_usec > 0 else -1
+	AffectiveEngine.report_event(AffectiveTypes.EventType.DECISION, {
+		"latency_usec": latency_usec,
+		"hesitation_reversals": int(n.get_meta("_zone_reversals")),
+		"zone_kind": "obstacle" if n is Obstacle else "answer_gate",
+	})
+	if _open_zone == n:
+		_open_zone = null
 
 func _update_ui() -> void:
 	score_label.text = "Score: %d" % int(score)

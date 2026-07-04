@@ -14,12 +14,16 @@ signal params_changed(new_params: AdaptationParams)
 
 var _current_state: AffectiveTypes.CognitiveState = AffectiveTypes.CognitiveState.FLOW
 var _current_params: AdaptationParams = AdaptationParams.new()
+var _telemetry: TelemetryCollector = TelemetryCollector.new()
 
-func report_event(_event_type: AffectiveTypes.EventType, _payload: Dictionary) -> void:
-	pass
+func report_event(event_type: AffectiveTypes.EventType, payload: Dictionary) -> void:
+	_telemetry.record(event_type, payload)
 
 func get_params() -> AdaptationParams:
 	return _current_params.duplicate_params()
 
 func current_state() -> AffectiveTypes.CognitiveState:
 	return _current_state
+
+func debug_event_count() -> int:
+	return _telemetry.total_recorded()
