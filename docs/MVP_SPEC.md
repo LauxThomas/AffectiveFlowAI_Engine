@@ -26,3 +26,11 @@ one DECISION event per obstacle, fired at collision or off-screen escape.
 Zero new fields on `obstacle.gd`/`coin.gd`; zone bookkeeping lives entirely in
 `main.gd` via node metadata. Nothing consumes this data yet (no FeatureWindow
 until C3) — the Debug HUD's new raw event counter is the only visible effect.
+
+## C3 — FeatureWindow + live tick
+Added `FeatureWindow` (6s/20-event rolling window -> 8 normalized [0,1]
+features) and a child `Timer` (150ms) inside `AffectiveEngine` that pulls new
+events each tick and re-extracts the feature vector. No estimator yet (state
+is still hardcoded FLOW, that's C4) - this commit is purely "raw telemetry in,
+normalized numbers out." The Debug HUD now shows a live bar per feature,
+visibly reacting to swipe speed/hesitation/hits/idling in real time.
