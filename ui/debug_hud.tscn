@@ -51,6 +51,11 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "Logging: off (F4)"
 
+[node name="PacksLabel" type="Label" parent="Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Packs loaded: 0 ()"
+
 [node name="FeatureBars" type="GridContainer" parent="Panel/VBoxContainer"]
 layout_mode = 2
 columns = 2

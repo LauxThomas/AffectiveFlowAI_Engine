@@ -13,6 +13,7 @@ const FEATURE_KEYS: Array[String] = [
 @onready var events_label: Label = $Panel/VBoxContainer/EventsLabel
 @onready var feature_bars: GridContainer = $Panel/VBoxContainer/FeatureBars
 @onready var logging_label: Label = $Panel/VBoxContainer/LoggingLabel
+@onready var packs_label: Label = $Panel/VBoxContainer/PacksLabel
 
 func _ready() -> void:
 	layer = 100
@@ -21,6 +22,14 @@ func _ready() -> void:
 	AffectiveEngine.params_changed.connect(_on_params_changed)
 	_on_state_changed(AffectiveEngine.current_state())
 	_on_params_changed(AffectiveEngine.get_params())
+	_refresh_packs_label()
+
+func _refresh_packs_label() -> void:
+	var packs: Dictionary = ContentPackLoader.load_merged_packs()
+	var ids: Array[String] = []
+	for key in packs.keys():
+		ids.append(String(key))
+	packs_label.text = "Packs loaded: %d (%s)" % [ids.size(), ", ".join(ids)]
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:

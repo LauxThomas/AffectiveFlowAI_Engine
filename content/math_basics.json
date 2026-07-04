@@ -1,0 +1,14 @@
+{
+	"id": "math_basics",
+	"subject": "Math Tunnels: Basics",
+	"items": [
+		{ "question": "3 + 4 = ?", "answers": ["6", "7", "8"], "correct_index": 1, "difficulty": 0 },
+		{ "question": "9 - 5 = ?", "answers": ["3", "4", "5"], "correct_index": 1, "difficulty": 0 },
+		{ "question": "6 + 7 = ?", "answers": ["12", "13", "14"], "correct_index": 1, "difficulty": 1 },
+		{ "question": "15 - 8 = ?", "answers": ["6", "7", "8"], "correct_index": 1, "difficulty": 1 },
+		{ "question": "8 x 3 = ?", "answers": ["22", "24", "26"], "correct_index": 1, "difficulty": 2 },
+		{ "question": "45 / 5 = ?", "answers": ["8", "9", "10"], "correct_index": 2, "difficulty": 2 },
+		{ "question": "12 x 12 = ?", "answers": ["124", "144", "154"], "correct_index": 1, "difficulty": 3 },
+		{ "question": "17 x 6 = ?", "answers": ["96", "102", "112"], "correct_index": 0, "difficulty": 4 }
+	]
+}

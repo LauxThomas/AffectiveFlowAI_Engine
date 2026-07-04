@@ -88,3 +88,17 @@ temporarily forcing consent on for a 10s run: confirmed a well-formed
 the live state/load/params (params visibly dipped toward OVERWHELM minimums
 as hits accumulated, exactly as C6 designed), then confirmed a normal run
 with consent left off creates zero session files.
+
+## C8 — ContentPackLoader + sample Math Tunnels pack
+Added `ContentPackLoader` (merges `res://content/` bundled packs, listed via
+a committed `manifest.json` rather than DirAccess - unreliable for plain
+files in an exported PCK/Web build - with `user://content/` authored packs
+via real DirAccess; merge key is pack id, whole-pack replace) and the sample
+`math_basics.json` pack (8 questions across difficulty tiers 0-4, 3 answers
+each matching LANE_COUNT). `validate_pack()` is shared and ready for both
+the game's load-time checks and the Content Editor's save-time checks in
+C11. Not wired into gameplay yet (C9). The Debug HUD shows a "Packs loaded"
+line. Verified with a temporary print statement that the bundled pack loads
+correctly with all fields intact (JSON numbers arrive as floats - already
+`int()`-cast in `validate_pack`), then removed it - clean import/export/
+runtime.
