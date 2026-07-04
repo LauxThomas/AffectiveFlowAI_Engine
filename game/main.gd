@@ -9,8 +9,8 @@ const HIT_FACTOR  := 0.6      # speed *= HIT_FACTOR bei Treffer
 const MIN_SPEED   := 190.0    # Untergrenze -> stoppt nie
 const SCORE_RATE  := 0.02
 
-const OBSTACLE := preload("res://obstacle.tscn")
-const COIN     := preload("res://coin.tscn")
+const OBSTACLE := preload("res://game/obstacle.tscn")
+const COIN     := preload("res://game/coin.tscn")
 
 # Hindernis-Presets: Breite / Höhe (Breite < Lane-Breite!)
 const OB_PRESETS := [
