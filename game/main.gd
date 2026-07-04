@@ -9,9 +9,13 @@ const HIT_FACTOR  := 0.6      # speed *= HIT_FACTOR bei Treffer
 const MIN_SPEED   := 190.0    # Untergrenze -> stoppt nie
 const SCORE_RATE  := 0.02
 const DECISION_ZONE_Y := 300.0   # px lead distance above the player row
+const GATE_SPAWN_MIN_GAP := 900.0
+const GATE_SPAWN_MAX_GAP := 1500.0
+const GATE_CLEARANCE_PX := 260.0   # keep obstacles/coins out of a gate's footprint
 
 const OBSTACLE := preload("res://game/obstacle.tscn")
 const COIN     := preload("res://game/coin.tscn")
+const ANSWER_TOKEN := preload("res://game/answer_token.tscn")
 
 # Hindernis-Presets: Breite / Höhe (Breite < Lane-Breite!)
 const OB_PRESETS := [
@@ -28,16 +32,19 @@ var hits := 0
 var coins := 0
 var _dist_ob := 340.0
 var _dist_coin := 220.0
+var _dist_gate := 700.0
 var _scroll := 0.0
 var _player_y := 0.0
 var _lanes: Array[float] = []
 var _open_zone: Node2D = null
 var _hint_free_lane: int = -1
+var _pack_items: Array = []
 
 @onready var player: Node2D = $Player
 @onready var score_label: Label = $UI/ScoreLabel
 @onready var coins_label: Label = $UI/CoinsLabel
 @onready var hits_label: Label = $UI/HitsLabel
+@onready var question_label: Label = $UI/QuestionLabel
 
 func _ready() -> void:
 	randomize()
@@ -50,7 +57,20 @@ func _ready() -> void:
 		player.setup(_lanes, 1)
 	if player.has_signal("lane_switched"):
 		player.lane_switched.connect(_on_player_lane_switched)
+	_load_active_pack()
 	_update_ui()
+
+func _load_active_pack() -> void:
+	var forced_id: String = GameSession.consume_forced_pack()
+	if not forced_id.is_empty():
+		GameSession.active_pack_id = forced_id
+	var packs: Dictionary = ContentPackLoader.load_merged_packs()
+	var pack: Variant = packs.get(GameSession.active_pack_id, {})
+	if typeof(pack) != TYPE_DICTIONARY:
+		return
+	var items: Variant = (pack as Dictionary).get("items", [])
+	if typeof(items) == TYPE_ARRAY:
+		_pack_items = items as Array
 
 func _lane_x(i: int, w: float) -> float:
 	return w * (float(i) + 0.5) / float(LANE_COUNT)
@@ -91,6 +111,12 @@ func _process(delta: float) -> void:
 		_spawn_coin()
 		_dist_coin = randf_range(150.0, 300.0)
 
+	# Math Tunnels Antwort-Gates
+	_dist_gate -= move
+	if _dist_gate <= 0.0:
+		_spawn_answer_gate(params.difficulty)
+		_dist_gate = randf_range(GATE_SPAWN_MIN_GAP, GATE_SPAWN_MAX_GAP)
+
 	if player.has_method("set_hint_lane"):
 		player.set_hint_lane(_hint_free_lane if params.hint_level > 0 else -1)
 
@@ -125,6 +151,57 @@ func _spawn_coin() -> void:
 	c.add_to_group("scroll")
 	c.collected.connect(_on_coin_collected)
 	add_child(c)
+
+func _spawn_answer_gate(difficulty: int) -> void:
+	if _pack_items.is_empty():
+		return
+	var candidates: Array = _pack_items.filter(
+		func(item_variant: Variant) -> bool:
+			return typeof(item_variant) == TYPE_DICTIONARY and int((item_variant as Dictionary).get("difficulty", 0)) == difficulty
+	)
+	var pool: Array = candidates if not candidates.is_empty() else _pack_items
+	var item_variant: Variant = pool.pick_random()
+	if typeof(item_variant) != TYPE_DICTIONARY:
+		return
+	var item: Dictionary = item_variant as Dictionary
+	var answers: Variant = item.get("answers", [])
+	if typeof(answers) != TYPE_ARRAY or (answers as Array).size() != LANE_COUNT:
+		return
+	var answer_list: Array = answers as Array
+	var correct_index: int = int(item.get("correct_index", 0))
+	var question_id: String = String(item.get("question", ""))
+	var question_start_usec := Time.get_ticks_usec()
+
+	# Deliberate divergence from the obstacle fairness invariant: an
+	# answer-gate covers ALL lanes (every lane holds one token), so the
+	# player always answers something. Do not "fix" this into a free lane.
+	for lane in range(LANE_COUNT):
+		var token := ANSWER_TOKEN.instantiate() as AnswerToken
+		token.setup(String(answer_list[lane]), lane == correct_index, question_id, question_start_usec)
+		token.position = Vector2(_lanes[lane], -60.0)
+		token.add_to_group("scroll")
+		token.add_to_group("decision_zone")
+		token.resolved.connect(_on_answer_resolved.bind(token))
+		add_child(token)
+
+	question_label.text = question_id
+	_hint_free_lane = correct_index   # reuses the existing hint beacon mechanism
+	# keep obstacles/coins out of this gate's immediate footprint
+	_dist_ob = maxf(_dist_ob, GATE_CLEARANCE_PX)
+	_dist_coin = maxf(_dist_coin, GATE_CLEARANCE_PX)
+
+func _on_answer_resolved(correct: bool, question_id: String, question_start_usec: int, token: AnswerToken) -> void:
+	_close_zone(token)
+	var time_to_answer_ms: float = float(Time.get_ticks_usec() - question_start_usec) / 1000.0
+	AffectiveEngine.report_event(AffectiveTypes.EventType.ANSWER, {
+		"question_id": question_id,
+		"correct": correct,
+		"time_to_answer_ms": time_to_answer_ms,
+	})
+	# Wrong answers are a telemetry-only error signal - they do NOT also
+	# trigger HIT_FACTOR's speed penalty (avoids double-dipping between two
+	# separate error mechanics; scaffolding comes purely through the
+	# AdaptationEngine reacting to the resulting OVERWHELM-leaning state).
 
 func _on_obstacle_hit(ob: Obstacle) -> void:
 	_close_zone(ob)

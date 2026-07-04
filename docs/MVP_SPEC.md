@@ -102,3 +102,23 @@ line. Verified with a temporary print statement that the bundled pack loads
 correctly with all fields intact (JSON numbers arrive as floats - already
 `int()`-cast in `validate_pack`), then removed it - clean import/export/
 runtime.
+
+## C9 — Math Tunnels live in-game
+Added `AnswerToken` (neutral-looking until resolved - revealing correctness
+upfront would defeat the point; only the hint beacon may reveal the correct
+lane) and the `GameSession` autoload (holds `forced_pack_id` for the future
+Play-test button). `main.gd` now spawns answer-gates on their own distance
+accumulator, picking a question matching the current adaptation difficulty
+tier (falling back to the whole pool if none match), spanning all 3 lanes
+with no free pass (a deliberate, commented divergence from the obstacle
+fairness invariant - every lane holds one answer). Passing the correct lane
+reports an ANSWER telemetry event with correctness and time-to-answer; wrong
+answers are telemetry-only (no HIT_FACTOR speed penalty - avoids double-
+dipping between two separate error mechanics). `GATE_CLEARANCE_PX` keeps
+obstacles/coins out of a gate's footprint. A new `QuestionLabel` shows the
+current question text. Verified end-to-end: a 20s run with logging
+temporarily forced on captured 4 ANSWER outcomes in the JSONL, correctly
+independent from HIT outcomes, with state/load/params responding exactly as
+C6 designed (confirmed one line with `assist:true`, `hint_level:1` under
+sustained high error_rate) - then reverted the test hook and re-verified
+clean import/export.
