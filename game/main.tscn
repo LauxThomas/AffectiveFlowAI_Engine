@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/player.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://ui/debug_hud.tscn" id="3"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
@@ -35,3 +36,5 @@ text = "Treffer: 0"
 [node name="Player" parent="." instance=ExtResource("2")]
 z_index = 10
 position = Vector2(270, 810)
+
+[node name="DebugHud" parent="." instance=ExtResource("3")]
