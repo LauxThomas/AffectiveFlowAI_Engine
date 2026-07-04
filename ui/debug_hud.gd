@@ -12,6 +12,7 @@ const FEATURE_KEYS: Array[String] = [
 @onready var params_label: Label = $Panel/VBoxContainer/ParamsLabel
 @onready var events_label: Label = $Panel/VBoxContainer/EventsLabel
 @onready var feature_bars: GridContainer = $Panel/VBoxContainer/FeatureBars
+@onready var logging_label: Label = $Panel/VBoxContainer/LoggingLabel
 
 func _ready() -> void:
 	layer = 100
@@ -24,8 +25,13 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
-		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F3:
-			panel.visible = not panel.visible
+		if key_event.pressed and not key_event.echo:
+			if key_event.keycode == KEY_F3:
+				panel.visible = not panel.visible
+			# Dev-only logging toggle - replaced by a real consent checkbox
+			# in the main menu once it exists. Consent still defaults off.
+			elif key_event.keycode == KEY_F4:
+				AffectiveEngine.set_logging_consent(not AffectiveEngine.is_logging_enabled())
 
 func _process(_delta: float) -> void:
 	if not panel.visible:
@@ -38,6 +44,10 @@ func _process(_delta: float) -> void:
 		var bar := feature_bars.get_node_or_null(key) as ProgressBar
 		if bar != null:
 			bar.value = float(features.get(key, 0.0)) * 100.0
+	if AffectiveEngine.is_logging_enabled():
+		logging_label.text = "Logging: ON (F4) - %d ticks" % AffectiveEngine.debug_logged_ticks()
+	else:
+		logging_label.text = "Logging: off (F4)"
 
 func _on_state_changed(new_state: AffectiveTypes.CognitiveState) -> void:
 	state_label.text = AffectiveTypes.state_name(new_state)

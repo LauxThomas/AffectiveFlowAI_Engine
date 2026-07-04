@@ -46,6 +46,11 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "Events: 0"
 
+[node name="LoggingLabel" type="Label" parent="Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Logging: off (F4)"
+
 [node name="FeatureBars" type="GridContainer" parent="Panel/VBoxContainer"]
 layout_mode = 2
 columns = 2

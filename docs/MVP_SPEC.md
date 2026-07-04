@@ -73,3 +73,18 @@ logic. No game-over design preserved throughout. Verified via headless
 import, Web export, and a 12s runtime smoke test (with no player input, the
 stationary player accumulates hits, which exercised the OVERWHELM/hint path
 under real conditions) - all clean.
+
+## C7 — SessionLogger (GDPR-safe)
+Added `SessionLogger`: opt-in, defaults OFF, anonymous UUID session id (not
+tied to any identity), appends one JSON line per estimator tick to
+`user://sessions/<uuid>.jsonl` (features, predicted state, load, confidence,
+params, and per-tick HIT/ANSWER outcomes as labels for future training),
+flushing each line since Web's IDBFS sync isn't instant. `list_sessions()`/
+`export_session()`/`delete_all_sessions()` are ready for the consent UI
+landing in C12; for now the Debug HUD has a dev-only F4 toggle (consent
+still defaults off) showing a live "ticks logged" counter. Verified by
+temporarily forcing consent on for a 10s run: confirmed a well-formed
+65-line JSONL file with all expected fields and sensible values tracking
+the live state/load/params (params visibly dipped toward OVERWHELM minimums
+as hits accumulated, exactly as C6 designed), then confirmed a normal run
+with consent left off creates zero session files.

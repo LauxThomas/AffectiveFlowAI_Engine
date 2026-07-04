@@ -33,6 +33,7 @@ var _window: FeatureWindow = FeatureWindow.new()
 var _baseline: UserBaseline
 var _model: ICognitiveLoadModel
 var _policy: IAdaptationPolicy = RuleBasedPolicy.new()
+var _logger: SessionLogger = SessionLogger.new()
 var _last_tick_usec: int = 0
 var _last_features: Dictionary = {}
 var _last_load: float = 0.0
@@ -55,6 +56,7 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		_baseline.save()
+		_logger.set_consent(false)   # flushes and closes the session file cleanly
 
 func report_event(event_type: AffectiveTypes.EventType, payload: Dictionary) -> void:
 	_telemetry.record(event_type, payload)
@@ -77,10 +79,28 @@ func debug_load() -> float:
 func debug_confidence() -> float:
 	return _last_confidence
 
+func set_logging_consent(enabled: bool) -> void:
+	_logger.set_consent(enabled)
+
+func is_logging_enabled() -> bool:
+	return _logger.is_enabled()
+
+func debug_logged_ticks() -> int:
+	return _logger.ticks_logged()
+
 func _on_tick() -> void:
 	var new_events: Array[Dictionary] = _telemetry.events_since(_last_tick_usec)
 	_window.push_events(new_events)
 	_last_features = _window.extract()
+
+	var outcome_hit := false
+	var outcome_answer_correct: Variant = null
+	for event in new_events:
+		var event_type: int = int(event["type"])
+		if event_type == AffectiveTypes.EventType.HIT:
+			outcome_hit = true
+		elif event_type == AffectiveTypes.EventType.ANSWER:
+			outcome_answer_correct = bool(event.get("correct", false))
 
 	var prediction: Dictionary = _model.predict(_last_features)
 	var predicted_state: AffectiveTypes.CognitiveState = prediction.get("state")
@@ -104,6 +124,8 @@ func _on_tick() -> void:
 	_current_params = next_params
 	if params_changed_flag:
 		params_changed.emit(_current_params.duplicate_params())
+
+	_logger.log_tick(_current_state, prediction, _current_params, _last_features, outcome_hit, outcome_answer_correct)
 
 	_ticks_since_save += 1
 	if _ticks_since_save >= BASELINE_SAVE_INTERVAL_TICKS:
