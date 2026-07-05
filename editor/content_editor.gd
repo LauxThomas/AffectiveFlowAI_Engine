@@ -15,6 +15,7 @@ const MAX_DIFFICULTY := 4
 @onready var question_list: ItemList = $Scroll/VBox/QuestionList
 @onready var question_text_edit: LineEdit = $Scroll/VBox/QuestionTextEdit
 @onready var difficulty_spin: SpinBox = $Scroll/VBox/DifficultyRow/DifficultySpin
+@onready var hint_edit: LineEdit = $Scroll/VBox/HintEdit
 @onready var validation_label: Label = $Scroll/VBox/ValidationLabel
 @onready var import_dialog: FileDialog = $ImportDialog
 @onready var export_dialog: FileDialog = $ExportDialog
@@ -182,6 +183,7 @@ func _on_question_selected(index: int) -> void:
 		_answer_edits[i].text = String(answer_array[i]) if i < answer_array.size() else ""
 		_answer_checks[i].button_pressed = (i == correct_index)
 	difficulty_spin.value = float(int(item.get("difficulty", 0)))
+	hint_edit.text = String(item.get("hint", ""))
 
 func _clear_question_ui() -> void:
 	question_text_edit.text = ""
@@ -189,6 +191,7 @@ func _clear_question_ui() -> void:
 		_answer_edits[i].text = ""
 		_answer_checks[i].button_pressed = false
 	difficulty_spin.value = 0
+	hint_edit.text = ""
 
 func _save_question_from_ui() -> void:
 	if _current_question_index < 0:
@@ -207,6 +210,7 @@ func _save_question_from_ui() -> void:
 		"answers": answers,
 		"correct_index": correct_index,
 		"difficulty": int(difficulty_spin.value),
+		"hint": hint_edit.text,
 	}
 
 func _on_add_question_pressed() -> void:

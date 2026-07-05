@@ -149,6 +149,10 @@ text = "Difficulty:"
 [node name="DifficultySpin" type="SpinBox" parent="Scroll/VBox/DifficultyRow"]
 layout_mode = 2
 
+[node name="HintEdit" type="LineEdit" parent="Scroll/VBox"]
+layout_mode = 2
+placeholder_text = "Hint shown as scaffolding when the player is struggling (optional)"
+
 [node name="ValidationLabel" type="Label" parent="Scroll/VBox"]
 layout_mode = 2
 visible = false

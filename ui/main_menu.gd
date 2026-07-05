@@ -4,11 +4,12 @@ extends Control
 @onready var edit_content_button: Button = $EditContentButton
 @onready var settings_button: Button = $SettingsButton
 @onready var settings_panel: PanelContainer = $SettingsPanel
-@onready var obstacles_check: CheckBox = $SettingsPanel/SettingsContent/ObstaclesCheck
-@onready var consent_check: CheckBox = $SettingsPanel/SettingsContent/ConsentCheck
-@onready var sessions_status_label: Label = $SettingsPanel/SettingsContent/SessionsStatusLabel
-@onready var export_sessions_button: Button = $SettingsPanel/SettingsContent/SessionButtons/ExportSessionsButton
-@onready var delete_sessions_button: Button = $SettingsPanel/SettingsContent/SessionButtons/DeleteSessionsButton
+@onready var obstacles_check: CheckBox = $SettingsPanel/SettingsScroll/SettingsContent/ObstaclesCheck
+@onready var question_interval_spin: SpinBox = $SettingsPanel/SettingsScroll/SettingsContent/QuestionIntervalRow/QuestionIntervalSpin
+@onready var consent_check: CheckBox = $SettingsPanel/SettingsScroll/SettingsContent/ConsentCheck
+@onready var sessions_status_label: Label = $SettingsPanel/SettingsScroll/SettingsContent/SessionsStatusLabel
+@onready var export_sessions_button: Button = $SettingsPanel/SettingsScroll/SettingsContent/SessionButtons/ExportSessionsButton
+@onready var delete_sessions_button: Button = $SettingsPanel/SettingsScroll/SettingsContent/SessionButtons/DeleteSessionsButton
 @onready var export_sessions_dialog: FileDialog = $SettingsPanel/ExportSessionsDialog
 @onready var delete_sessions_confirm: ConfirmationDialog = $SettingsPanel/DeleteSessionsConfirm
 
@@ -20,6 +21,9 @@ func _ready() -> void:
 
 	obstacles_check.button_pressed = GameSession.obstacles_enabled
 	obstacles_check.toggled.connect(_on_obstacles_toggled)
+
+	question_interval_spin.value = GameSession.question_interval_sec
+	question_interval_spin.value_changed.connect(_on_question_interval_changed)
 
 	consent_check.button_pressed = AffectiveEngine.is_logging_enabled()
 	consent_check.toggled.connect(_on_consent_toggled)
@@ -51,6 +55,9 @@ func _on_settings_pressed() -> void:
 
 func _on_obstacles_toggled(enabled: bool) -> void:
 	GameSession.obstacles_enabled = enabled
+
+func _on_question_interval_changed(value: float) -> void:
+	GameSession.question_interval_sec = value
 
 func _on_consent_toggled(enabled: bool) -> void:
 	AffectiveEngine.set_logging_consent(enabled)
