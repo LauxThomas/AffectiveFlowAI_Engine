@@ -122,3 +122,16 @@ independent from HIT outcomes, with state/load/params responding exactly as
 C6 designed (confirmed one line with `assist:true`, `hint_level:1` under
 sustained high error_rate) - then reverted the test hook and re-verified
 clean import/export.
+
+## C10 — Debug HUD complete
+Replaced the raw "Events: N" counter with a real scrolling `RichTextLabel`
+event log in `AffectiveEngine`: state transitions, HIT/ANSWER outcomes, and
+hint/assist activations each append a timestamped line (capped at 15),
+surfaced via `debug_event_log()`. Removed `TelemetryCollector.total_recorded()`
+now that nothing reads it. The HUD (F3) now shows the full spec 4.8 picture:
+color-coded state, load meter, confidence, 8 feature bars, live params,
+logging/packs status, and the scrolling log. Verified by temporarily forcing
+the panel visible for a 15s run and printing the log contents: confirmed a
+readable, demo-ready sequence ("ANSWER correct" -> "HIT" -> "State ->
+OVERWHELM" -> "Assist triggered" -> "Hint level -> 1" -> ...) before
+reverting both temp changes - clean import/export.

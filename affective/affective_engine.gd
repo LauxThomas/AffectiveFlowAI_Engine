@@ -26,6 +26,8 @@ const MIN_DWELL_TICKS := 4
 # "quit and relaunch" manual test sees the carried-over baseline quickly.
 const BASELINE_SAVE_INTERVAL_TICKS := 50   # ~7.5s at 150ms/tick
 
+const MAX_LOG_LINES := 15   # Debug HUD's scrolling event log (spec 4.8)
+
 var _current_state: AffectiveTypes.CognitiveState = AffectiveTypes.CognitiveState.FLOW
 var _current_params: AdaptationParams = AdaptationParams.new()
 var _telemetry: TelemetryCollector = TelemetryCollector.new()
@@ -41,6 +43,9 @@ var _last_confidence: float = 0.0
 var _pending_state: AffectiveTypes.CognitiveState = AffectiveTypes.CognitiveState.FLOW
 var _pending_state_ticks: int = 0
 var _ticks_since_save: int = 0
+var _event_log: Array[String] = []
+var _prev_assist: bool = false
+var _prev_hint_level: int = 0
 
 func _ready() -> void:
 	_baseline = UserBaseline.load_or_create()
@@ -60,6 +65,11 @@ func _notification(what: int) -> void:
 
 func report_event(event_type: AffectiveTypes.EventType, payload: Dictionary) -> void:
 	_telemetry.record(event_type, payload)
+	match event_type:
+		AffectiveTypes.EventType.HIT:
+			_log("HIT (error signal)")
+		AffectiveTypes.EventType.ANSWER:
+			_log("ANSWER %s" % ("correct" if bool(payload.get("correct", false)) else "incorrect"))
 
 func get_params() -> AdaptationParams:
 	return _current_params.duplicate_params()
@@ -67,8 +77,8 @@ func get_params() -> AdaptationParams:
 func current_state() -> AffectiveTypes.CognitiveState:
 	return _current_state
 
-func debug_event_count() -> int:
-	return _telemetry.total_recorded()
+func debug_event_log() -> Array[String]:
+	return _event_log.duplicate()
 
 func debug_features() -> Dictionary:
 	return _last_features
@@ -116,6 +126,7 @@ func _on_tick() -> void:
 	if _pending_state_ticks >= MIN_DWELL_TICKS and _pending_state != _current_state:
 		_current_state = _pending_state
 		state_changed.emit(_current_state)
+		_log("State -> %s" % AffectiveTypes.state_name(_current_state))
 
 	# Two independent consumers (main.gd via get_params(), the HUD via this
 	# signal) each get their own duplicated copy - never the shared instance.
@@ -124,6 +135,12 @@ func _on_tick() -> void:
 	_current_params = next_params
 	if params_changed_flag:
 		params_changed.emit(_current_params.duplicate_params())
+		if _current_params.assist and not _prev_assist:
+			_log("Assist triggered (slow-mo)")
+		if _current_params.hint_level > _prev_hint_level:
+			_log("Hint level -> %d" % _current_params.hint_level)
+		_prev_assist = _current_params.assist
+		_prev_hint_level = _current_params.hint_level
 
 	_logger.log_tick(_current_state, prediction, _current_params, _last_features, outcome_hit, outcome_answer_correct)
 
@@ -133,3 +150,9 @@ func _on_tick() -> void:
 		_ticks_since_save = 0
 
 	_last_tick_usec = Time.get_ticks_usec()
+
+func _log(line: String) -> void:
+	var timestamp_sec: float = float(Time.get_ticks_usec()) / 1_000_000.0
+	_event_log.append("[%.1fs] %s" % [timestamp_sec, line])
+	if _event_log.size() > MAX_LOG_LINES:
+		_event_log.pop_front()

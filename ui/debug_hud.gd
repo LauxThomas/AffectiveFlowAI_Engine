@@ -10,10 +10,12 @@ const FEATURE_KEYS: Array[String] = [
 @onready var load_meter: ProgressBar = $Panel/VBoxContainer/LoadRow/LoadMeter
 @onready var confidence_label: Label = $Panel/VBoxContainer/ConfidenceLabel
 @onready var params_label: Label = $Panel/VBoxContainer/ParamsLabel
-@onready var events_label: Label = $Panel/VBoxContainer/EventsLabel
 @onready var feature_bars: GridContainer = $Panel/VBoxContainer/FeatureBars
 @onready var logging_label: Label = $Panel/VBoxContainer/LoggingLabel
 @onready var packs_label: Label = $Panel/VBoxContainer/PacksLabel
+@onready var event_log: RichTextLabel = $Panel/VBoxContainer/EventLog
+
+var _last_log: Array[String] = []
 
 func _ready() -> void:
 	layer = 100
@@ -45,7 +47,6 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	if not panel.visible:
 		return
-	events_label.text = "Events: %d" % AffectiveEngine.debug_event_count()
 	load_meter.value = AffectiveEngine.debug_load() * 100.0
 	confidence_label.text = "Confidence: %d%%" % int(AffectiveEngine.debug_confidence() * 100.0)
 	var features: Dictionary = AffectiveEngine.debug_features()
@@ -57,6 +58,10 @@ func _process(_delta: float) -> void:
 		logging_label.text = "Logging: ON (F4) - %d ticks" % AffectiveEngine.debug_logged_ticks()
 	else:
 		logging_label.text = "Logging: off (F4)"
+	var log_lines: Array[String] = AffectiveEngine.debug_event_log()
+	if log_lines != _last_log:
+		_last_log = log_lines
+		event_log.text = "\n".join(log_lines)
 
 func _on_state_changed(new_state: AffectiveTypes.CognitiveState) -> void:
 	state_label.text = AffectiveTypes.state_name(new_state)
