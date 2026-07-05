@@ -12,16 +12,16 @@ config_version=5
 
 compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
-[autoload]
-
-AffectiveEngine="*res://affective/affective_engine.gd"
-GameSession="*res://game/game_session.gd"
-
 [application]
 
 config/name="Lane Runner"
 run/main_scene="res://ui/main_menu.tscn"
 config/features=PackedStringArray("4.7")
+
+[autoload]
+
+AffectiveEngine="*res://affective/affective_engine.gd"
+GameSession="*res://game/game_session.gd"
 
 [display]
 

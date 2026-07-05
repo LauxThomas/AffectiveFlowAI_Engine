@@ -11,7 +11,11 @@ const SCORE_RATE  := 0.02
 const DECISION_ZONE_Y := 300.0   # px lead distance above the player row
 const GATE_SPAWN_MIN_GAP := 900.0
 const GATE_SPAWN_MAX_GAP := 1500.0
-const GATE_CLEARANCE_PX := 260.0   # keep obstacles/coins out of a gate's footprint
+const GATE_CLEARANCE_PX := 340.0   # keep obstacles/coins out of a gate's footprint
+const OBSTACLE_GAP_FLOOR := 340.0   # px, up from 240 - fewer waves on screen at once
+const OBSTACLE_GAP_SPEED_FACTOR := 0.65   # up from 0.55 - gap grows faster with speed
+const COIN_GAP_MIN := 500.0   # up from 150 - coins are a rare bonus, not a constant stream
+const COIN_GAP_MAX := 900.0   # up from 300
 
 const OBSTACLE := preload("res://game/obstacle.tscn")
 const COIN     := preload("res://game/coin.tscn")
@@ -30,8 +34,8 @@ var speed := START_SPEED
 var score := 0.0
 var hits := 0
 var coins := 0
-var _dist_ob := 340.0
-var _dist_coin := 220.0
+var _dist_ob := 400.0
+var _dist_coin := 500.0
 var _dist_gate := 700.0
 var _scroll := 0.0
 var _player_y := 0.0
@@ -102,14 +106,15 @@ func _process(delta: float) -> void:
 	_dist_ob -= move
 	if _dist_ob <= 0.0:
 		_spawn_obstacles(params.difficulty)
-		var gap: float = maxf(240.0, speed * 0.55) / maxf(params.spawn_mult, 0.01)
-		_dist_ob = gap + randf_range(40.0, 220.0)
+		var gap: float = maxf(OBSTACLE_GAP_FLOOR, speed * OBSTACLE_GAP_SPEED_FACTOR) / maxf(params.spawn_mult, 0.01)
+		_dist_ob = gap + randf_range(60.0, 260.0)
 
-	# Münzen
+	# Münzen - a rare bonus, not a constant stream (no telemetry purpose,
+	# so kept sparse deliberately to reduce on-screen clutter)
 	_dist_coin -= move
 	if _dist_coin <= 0.0:
 		_spawn_coin()
-		_dist_coin = randf_range(150.0, 300.0)
+		_dist_coin = randf_range(COIN_GAP_MIN, COIN_GAP_MAX)
 
 	# Math Tunnels Antwort-Gates
 	_dist_gate -= move

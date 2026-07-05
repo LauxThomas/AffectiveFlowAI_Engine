@@ -183,3 +183,18 @@ rule-based adaptation -> Math Tunnels -> session logging -> debug HUD ->
 content editor -> consent UI) is wired up end-to-end and has been verified
 after every single commit via headless import, Web export, and targeted
 runtime checks.
+
+## Post-MVP tuning - reduced on-screen clutter
+Feedback: the default playfield felt too crowded (obstacles, coins, and
+answer-gates all spawning independently). Coins turned out to be the
+biggest contributor - they had no connection to the telemetry/adaptation
+loop at all (just a score counter) yet spawned roughly twice as often as
+obstacles. Rather than removing obstacles (they feed the HIT-based
+error_rate signal the estimator relies on), tuned spacing instead: coins
+are now a rare bonus (500-900px gap, up from 150-300 - roughly a 3x
+reduction, confirmed empirically via a temporary spawn counter: 14 coins
+vs 5 over the same 15s window), obstacles get noticeably more breathing
+room (340px gap floor and a steeper speed factor, up from 240/0.55), and
+the clearance around Math Tunnels gates widened (340px, up from 260) for a
+cleaner stage. Verified clean import/export/runtime after reverting all
+temporary comparison instrumentation.
