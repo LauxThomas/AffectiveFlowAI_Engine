@@ -135,3 +135,27 @@ the panel visible for a 15s run and printing the log contents: confirmed a
 readable, demo-ready sequence ("ANSWER correct" -> "HIT" -> "State ->
 OVERWHELM" -> "Assist triggered" -> "Hint level -> 1" -> ...) before
 reverting both temp changes - clean import/export.
+
+## C11 — Content Editor + Main Menu
+Added a minimal main menu (Play / Edit Content / Settings, the latter a
+placeholder panel C12 fills in) and the Content Editor: pack list
+(new/duplicate/delete - delete only works on authored `user://content/`
+packs, bundled packs can only be overridden), pack meta fields (id/subject/
+grade), question list (add/remove), and a question editor (text, 3 answers
+matching LANE_COUNT with a shared-`ButtonGroup` correct-answer checkbox,
+difficulty tier). Validation reuses `ContentPackLoader.validate_pack()` -
+the same rules the game enforces at load time - surfaced as an inline red
+message. Play-test saves first (so a scene change never loses in-progress
+edits), then hands the pack to the runner via `GameSession.forced_pack_id`.
+Import/Export use a desktop `FileDialog` in filesystem mode, explicitly
+disabled with a tooltip on Web (it would otherwise silently browse the
+sandboxed `user://` filesystem instead of the visitor's real disk).
+`project.godot`'s `run/main_scene` now points at the menu - its second and
+final change. Verified end-to-end: clean import/export/runtime with the
+menu as main scene; separately pointed main scene at the editor and, since
+headless can't click buttons, called its own handler methods directly to
+simulate a full New Pack -> add question -> fill fields -> Save cycle -
+confirmed the file was created, reloaded correctly with every field intact,
+and deleted cleanly; then confirmed the validation path correctly rejects
+a question with no correct answer marked (clear inline message, no file
+written) - reverted the test hook and the temporary main-scene override.

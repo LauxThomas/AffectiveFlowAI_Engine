@@ -1,0 +1,55 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/main_menu.gd" id="1"]
+
+[node name="MainMenu" type="Control"]
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 540.0
+offset_bottom = 960.0
+color = Color(0.203922, 0.219608, 0.254902, 1)
+
+[node name="TitleLabel" type="Label" parent="."]
+offset_left = 40.0
+offset_top = 220.0
+offset_right = 500.0
+offset_bottom = 280.0
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+text = "Lane Runner"
+
+[node name="PlayButton" type="Button" parent="."]
+offset_left = 140.0
+offset_top = 340.0
+offset_right = 400.0
+offset_bottom = 392.0
+text = "Play"
+
+[node name="EditContentButton" type="Button" parent="."]
+offset_left = 140.0
+offset_top = 410.0
+offset_right = 400.0
+offset_bottom = 462.0
+text = "Edit Content"
+
+[node name="SettingsButton" type="Button" parent="."]
+offset_left = 140.0
+offset_top = 480.0
+offset_right = 400.0
+offset_bottom = 532.0
+text = "Settings"
+
+[node name="SettingsPanel" type="PanelContainer" parent="."]
+offset_left = 40.0
+offset_top = 570.0
+offset_right = 500.0
+offset_bottom = 900.0
+
+[node name="SettingsContent" type="VBoxContainer" parent="SettingsPanel"]
+layout_mode = 2
+
+[node name="PlaceholderLabel" type="Label" parent="SettingsPanel/SettingsContent"]
+layout_mode = 2
+autowrap_mode = 2
+text = "Privacy & data settings coming soon."

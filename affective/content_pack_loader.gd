@@ -39,6 +39,16 @@ static func save_user_pack(pack: Dictionary) -> bool:
 	file.close()
 	return true
 
+# Only user://content/ packs can be deleted - bundled res://content/ packs
+# are read-only in exported builds and can only be overridden, not removed.
+static func is_user_pack(pack_id: String) -> bool:
+	return FileAccess.file_exists(USER_CONTENT_DIR + pack_id + ".json")
+
+static func delete_user_pack(pack_id: String) -> void:
+	var path: String = USER_CONTENT_DIR + pack_id + ".json"
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)
+
 # existing_ids is the set of OTHER packs' ids (exclude the pack's own prior
 # id when re-validating an edit) - used for the "unique pack id" rule.
 static func validate_pack(pack: Dictionary, lane_count: int, existing_ids: Array[String] = []) -> Array[String]:

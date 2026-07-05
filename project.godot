@@ -20,7 +20,7 @@ GameSession="*res://game/game_session.gd"
 [application]
 
 config/name="Lane Runner"
-run/main_scene="res://game/main.tscn"
+run/main_scene="res://ui/main_menu.tscn"
 config/features=PackedStringArray("4.7")
 
 [display]
