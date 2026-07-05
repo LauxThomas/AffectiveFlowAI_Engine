@@ -1,0 +1,69 @@
+{
+	"id": "cognitive_load_theory",
+	"subject": "Cognitive Load Theory",
+	"items": [
+		{
+			"question": "Cognitive Load Theory was developed by which researcher?",
+			"answers": ["John Sweller", "Jean Piaget", "B.F. Skinner"],
+			"correct_index": 0,
+			"difficulty": 0,
+			"hint": "He introduced the theory in the 1980s while studying problem-solving during learning."
+		},
+		{
+			"question": "How many basic types of cognitive load does the theory describe?",
+			"answers": ["Two", "Three", "Five"],
+			"correct_index": 1,
+			"difficulty": 0,
+			"hint": "Think: intrinsic, extraneous, and germane load."
+		},
+		{
+			"question": "Which type of load is caused by the inherent difficulty of the material itself?",
+			"answers": ["Extraneous load", "Intrinsic load", "Germane load"],
+			"correct_index": 1,
+			"difficulty": 1,
+			"hint": "It depends on the complexity of the content, not on how it's presented."
+		},
+		{
+			"question": "Which type of load is caused by how information is presented, and can often be reduced by better instructional design?",
+			"answers": ["Intrinsic load", "Extraneous load", "Germane load"],
+			"correct_index": 1,
+			"difficulty": 1,
+			"hint": "Confusing layouts or unnecessary decoration increase this type of load."
+		},
+		{
+			"question": "Germane load refers to mental effort that:",
+			"answers": ["Wastes working memory on irrelevant details", "Contributes to building useful long-term memory schemas", "Comes only from the raw difficulty of the topic"],
+			"correct_index": 1,
+			"difficulty": 2,
+			"hint": "It's considered 'productive' load - the effort of actually learning and organizing knowledge."
+		},
+		{
+			"question": "The 'worked example effect' suggests that novices learn better when they:",
+			"answers": ["Solve problems from scratch immediately", "Study fully worked-out example solutions first", "Are given no examples at all"],
+			"correct_index": 1,
+			"difficulty": 2,
+			"hint": "Studying a complete solution first reduces load before independent practice."
+		},
+		{
+			"question": "The 'split-attention effect' occurs when learners must:",
+			"answers": ["Mentally integrate two or more separate sources of information", "Focus on a single, well-integrated source", "Repeat the same information twice in a row"],
+			"correct_index": 0,
+			"difficulty": 3,
+			"hint": "For example, a diagram on one page and its explanation somewhere else entirely."
+		},
+		{
+			"question": "Classic working-memory estimates often cited alongside cognitive load theory put its novel-item capacity at roughly:",
+			"answers": ["around 2 items", "around 4 items", "around 12 items"],
+			"correct_index": 1,
+			"difficulty": 3,
+			"hint": "Modern estimates are lower than the older 'seven plus or minus two' figure."
+		},
+		{
+			"question": "The 'expertise reversal effect' means that instructional techniques which help novices (like worked examples) can:",
+			"answers": ["Always help experts even more", "Become less effective or even hinder experts", "Have no effect on learning at any skill level"],
+			"correct_index": 1,
+			"difficulty": 4,
+			"hint": "As learners gain expertise, scaffolding that once helped can start to get in the way."
+		}
+	]
+}

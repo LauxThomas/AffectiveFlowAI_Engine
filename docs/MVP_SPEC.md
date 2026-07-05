@@ -261,3 +261,53 @@ showed the correct answer landing in all 3 lanes across the same 20 draws.
 Clean import/export/runtime after reverting test instrumentation. Done on
 a feature branch (not main), per updated workflow preference - the user
 merges branches by hand.
+
+## Same branch: retired lane-based answer-gates for a paused Cognitive Load Theory question overlay
+Feedback: the lane-gate questions were far too fast for real content, and
+the user wants to track flow state and show progressively more complex
+Cognitive Load Theory questions (not math) with flow-state-driven
+scaffolding, on a configurable interval (default 60s), pausing the game in
+an overlay rather than requiring a lane dodge.
+
+- Retired the whole lane-based mechanic: removed `AnswerToken` (deleted
+  the script/scene entirely), the gate spawn-distance accumulator, and
+  `GATE_SPAWN_MIN/MAX_GAP`/`GATE_CLEARANCE_PX`. Decision-zone tracking is
+  now obstacle-only (the only remaining "scroll" member that needs it).
+- New sample pack `content/cognitive_load_theory.json` (9 real CLT
+  questions - Sweller's three load types, worked-example/split-attention/
+  expertise-reversal effects, working-memory capacity - across difficulty
+  0-4, each with an optional `hint` field), now the default active pack.
+  `content_pack_loader.gd`'s schema quietly grew that optional `hint`
+  field; the Content Editor got a matching Hint text field.
+- New `ui/question_overlay.gd`/`.tscn` (`class_name QuestionOverlay`,
+  `process_mode ALWAYS`): `main.gd` now runs a time accumulator (not a
+  distance one) up to `GameSession.question_interval_sec` (default 60,
+  adjustable via a new Settings SpinBox), then pauses the tree and calls
+  `show_question(item, hint_level)`, reusing the existing shuffled-bag
+  `_pick_next_question`. Scaffolding is driven by the live
+  `AdaptationParams.hint_level` snapshotted at that moment: 0 = plain 3
+  answers; 1 = adds the per-question hint text plus a subtle highlight on
+  the correct answer; 2 = also removes one random wrong answer (down to 2
+  choices). Answering reports the ANSWER telemetry event same as before,
+  then unpauses.
+- `ui/pause_menu.gd`'s ESC handler now checks `QuestionOverlay.is_showing()`
+  first and no-ops if it's up, so the two paused-overlay systems can't
+  fight over `get_tree().paused`.
+- Main game HUD: replaced the "Treffer: N" hit counter with the live flow
+  state (`State: FLOW/BOREDOM/OVERWHELM`, color-coded via the same
+  `AffectiveTypes.STATE_COLOR` the debug HUD uses) - the `hits` counter
+  itself was removed since nothing else read it.
+- `FeatureWindow.error_rate`'s denominator now also counts `answer_count`
+  (not just `decision_count`), since obstacles are off by default and
+  gates are gone - `decision_count` alone would trend to 0 for most
+  players and leave the ratio undefined.
+
+Verified end-to-end in one run: pack loaded (9 items), state label showed
+"State: FLOW | 430 px/s"; triggered the overlay directly at hint_level 0
+(3 full answers, no hint, game paused), confirmed ESC during the overlay
+correctly did nothing (guarded), answered it and confirmed the game
+resumed; triggered at hint_level 1 (hint text appeared with real content,
+still 3 answers) and hint_level 2 (down to 2 answers); confirmed ESC with
+no overlay active correctly paused the game via the normal pause menu.
+Clean import/export/runtime (game, menu, and content editor scenes) after
+reverting all test instrumentation.

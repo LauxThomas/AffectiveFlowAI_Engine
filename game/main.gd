@@ -9,9 +9,6 @@ const HIT_FACTOR  := 0.6      # speed *= HIT_FACTOR bei Treffer
 const MIN_SPEED   := 190.0    # Untergrenze -> stoppt nie
 const SCORE_RATE  := 0.02
 const DECISION_ZONE_Y := 300.0   # px lead distance above the player row
-const GATE_SPAWN_MIN_GAP := 900.0
-const GATE_SPAWN_MAX_GAP := 1500.0
-const GATE_CLEARANCE_PX := 340.0   # keep obstacles/coins out of a gate's footprint
 const OBSTACLE_GAP_FLOOR := 340.0   # px, up from 240 - fewer waves on screen at once
 const OBSTACLE_GAP_SPEED_FACTOR := 0.65   # up from 0.55 - gap grows faster with speed
 const COIN_GAP_MIN := 500.0   # up from 150 - coins are a rare bonus, not a constant stream
@@ -19,7 +16,6 @@ const COIN_GAP_MAX := 900.0   # up from 300
 
 const OBSTACLE := preload("res://game/obstacle.tscn")
 const COIN     := preload("res://game/coin.tscn")
-const ANSWER_TOKEN := preload("res://game/answer_token.tscn")
 
 # Hindernis-Presets: Breite / Höhe (Breite < Lane-Breite!)
 const OB_PRESETS := [
@@ -32,11 +28,9 @@ const OB_PRESETS := [
 var _base_speed := START_SPEED   # natural pre-adaptation speed; final speed = _base_speed * params.speed_mult
 var speed := START_SPEED
 var score := 0.0
-var hits := 0
 var coins := 0
 var _dist_ob := 400.0
 var _dist_coin := 500.0
-var _dist_gate := 700.0
 var _scroll := 0.0
 var _player_y := 0.0
 var _lanes: Array[float] = []
@@ -44,12 +38,13 @@ var _open_zone: Node2D = null
 var _hint_free_lane: int = -1
 var _pack_items: Array = []
 var _asked_questions: Array[String] = []   # shuffled-bag: no repeat until the pool is exhausted
+var _question_timer_accum: float = 0.0   # counts up to GameSession.question_interval_sec
 
 @onready var player: Node2D = $Player
 @onready var score_label: Label = $UI/ScoreLabel
 @onready var coins_label: Label = $UI/CoinsLabel
-@onready var hits_label: Label = $UI/HitsLabel
-@onready var question_label: Label = $UI/QuestionLabel
+@onready var state_label: Label = $UI/StateLabel
+@onready var question_overlay: QuestionOverlay = $QuestionOverlay
 
 func _ready() -> void:
 	randomize()
@@ -62,6 +57,7 @@ func _ready() -> void:
 		player.setup(_lanes, 1)
 	if player.has_signal("lane_switched"):
 		player.lane_switched.connect(_on_player_lane_switched)
+	question_overlay.answer_chosen.connect(_on_overlay_answer_chosen)
 	_load_active_pack()
 	_update_ui()
 
@@ -119,14 +115,16 @@ func _process(delta: float) -> void:
 		_spawn_coin()
 		_dist_coin = randf_range(COIN_GAP_MIN, COIN_GAP_MAX)
 
-	# Math Tunnels Antwort-Gates
-	_dist_gate -= move
-	if _dist_gate <= 0.0:
-		_spawn_answer_gate(params.difficulty)
-		_dist_gate = randf_range(GATE_SPAWN_MIN_GAP, GATE_SPAWN_MAX_GAP)
-
 	if player.has_method("set_hint_lane"):
 		player.set_hint_lane(_hint_free_lane if params.hint_level > 0 else -1)
+
+	# Periodic paused question overlay - interval adjustable in Settings.
+	# _process stops running entirely once the tree is paused, so this
+	# can't re-trigger while the overlay is already up.
+	_question_timer_accum += delta
+	if _question_timer_accum >= GameSession.question_interval_sec:
+		_question_timer_accum = 0.0
+		_trigger_question_overlay(params.difficulty, params.hint_level)
 
 	_update_ui()
 	queue_redraw()
@@ -195,49 +193,20 @@ func _pick_next_question(difficulty: int) -> Dictionary:
 	_asked_questions.append(String(chosen.get("question", "")))
 	return chosen
 
-func _spawn_answer_gate(difficulty: int) -> void:
+# Pauses the game and shows the periodic question overlay - scaffolding
+# (hint text, answer elimination, correct-answer highlight) is driven by
+# the live hint_level snapshotted here, same idea as the old lane-hint
+# beacon. Resolution comes back via the overlay's answer_chosen signal.
+func _trigger_question_overlay(difficulty: int, hint_level: int) -> void:
 	if _pack_items.is_empty():
 		return
 	var item: Dictionary = _pick_next_question(difficulty)
 	if item.is_empty():
 		return
-	var answers: Variant = item.get("answers", [])
-	if typeof(answers) != TYPE_ARRAY or (answers as Array).size() != LANE_COUNT:
-		return
-	var answer_list: Array = answers as Array
-	var correct_index: int = int(item.get("correct_index", 0))
-	var question_id: String = String(item.get("question", ""))
-	var question_start_usec := Time.get_ticks_usec()
+	get_tree().paused = true
+	question_overlay.show_question(item, hint_level)
 
-	# Randomize which lane each answer lands in every spawn - otherwise the
-	# correct answer's on-screen position is just whatever slot the content
-	# author happened to type it into (in the sample pack, that was lane 1
-	# for most questions), which a player would quickly learn to exploit.
-	var lane_order: Array[int] = [0, 1, 2]
-	lane_order.shuffle()
-
-	# Deliberate divergence from the obstacle fairness invariant: an
-	# answer-gate covers ALL lanes (every lane holds one token), so the
-	# player always answers something. Do not "fix" this into a free lane.
-	for lane in range(LANE_COUNT):
-		var source_slot: int = lane_order[lane]
-		var token := ANSWER_TOKEN.instantiate() as AnswerToken
-		token.setup(String(answer_list[source_slot]), source_slot == correct_index, question_id, question_start_usec)
-		token.position = Vector2(_lanes[lane], -60.0)
-		token.add_to_group("scroll")
-		token.add_to_group("decision_zone")
-		token.resolved.connect(_on_answer_resolved.bind(token))
-		add_child(token)
-
-	question_label.text = question_id
-	_hint_free_lane = lane_order.find(correct_index)   # reuses the existing hint beacon mechanism
-	# keep obstacles/coins out of this gate's immediate footprint
-	_dist_ob = maxf(_dist_ob, GATE_CLEARANCE_PX)
-	_dist_coin = maxf(_dist_coin, GATE_CLEARANCE_PX)
-
-func _on_answer_resolved(correct: bool, question_id: String, question_start_usec: int, token: AnswerToken) -> void:
-	_close_zone(token)
-	var time_to_answer_ms: float = float(Time.get_ticks_usec() - question_start_usec) / 1000.0
+func _on_overlay_answer_chosen(correct: bool, question_id: String, time_to_answer_ms: float) -> void:
 	AffectiveEngine.report_event(AffectiveTypes.EventType.ANSWER, {
 		"question_id": question_id,
 		"correct": correct,
@@ -247,11 +216,11 @@ func _on_answer_resolved(correct: bool, question_id: String, question_start_usec
 	# trigger HIT_FACTOR's speed penalty (avoids double-dipping between two
 	# separate error mechanics; scaffolding comes purely through the
 	# AdaptationEngine reacting to the resulting OVERWHELM-leaning state).
+	get_tree().paused = false
 
 func _on_obstacle_hit(ob: Obstacle) -> void:
 	_close_zone(ob)
 	AffectiveEngine.report_event(AffectiveTypes.EventType.HIT, {})
-	hits += 1
 	_base_speed = maxf(_base_speed * HIT_FACTOR, MIN_SPEED)   # abbremsen statt stoppen
 	if player.has_method("flash"):
 		player.flash()
@@ -296,7 +265,7 @@ func _close_zone(n: Node2D) -> void:
 	AffectiveEngine.report_event(AffectiveTypes.EventType.DECISION, {
 		"latency_usec": latency_usec,
 		"hesitation_reversals": int(n.get_meta("_zone_reversals")),
-		"zone_kind": "obstacle" if n is Obstacle else "answer_gate",
+		"zone_kind": "obstacle",   # the only decision-zone member now that answer-gates are retired
 	})
 	if _open_zone == n:
 		_open_zone = null
@@ -304,7 +273,9 @@ func _close_zone(n: Node2D) -> void:
 func _update_ui() -> void:
 	score_label.text = "Score: %d" % int(score)
 	coins_label.text = "Coins: %d" % coins
-	hits_label.text = "Treffer: %d  |  %d px/s" % [hits, int(speed)]
+	var state: AffectiveTypes.CognitiveState = AffectiveEngine.current_state()
+	state_label.text = "State: %s  |  %d px/s" % [AffectiveTypes.state_name(state), int(speed)]
+	state_label.add_theme_color_override("font_color", AffectiveTypes.STATE_COLOR[state] as Color)
 
 # ─── Straße zeichnen ───────────────────────────────────────
 func _draw() -> void:

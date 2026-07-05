@@ -85,9 +85,11 @@ func extract() -> Dictionary:
 	var hesitation_rate: float = 0.0 if lane_dirs.is_empty() else clampf(float(reversals) / float(lane_dirs.size()), 0.0, 1.0)
 
 	var reaction_latency_mean: float = 0.0 if latencies_norm.is_empty() else _mean(latencies_norm)
-	# Both obstacle HITs and wrong ANSWERs are error signals (spec 4.5); with
-	# obstacles off by default, wrong answers keep this feature meaningful.
-	var error_rate: float = clampf(float(hit_count + wrong_answer_count) / float(maxi(decision_count, 1)), 0.0, 1.0)
+	# Both obstacle HITs and wrong ANSWERs are error signals (spec 4.5); the
+	# denominator now counts both kinds of "opportunity to err" too, since
+	# obstacles are off by default and answer-gates are retired - decision_count
+	# alone would trend to 0 for most players, leaving the ratio undefined.
+	var error_rate: float = clampf(float(hit_count + wrong_answer_count) / float(maxi(decision_count + answer_count, 1)), 0.0, 1.0)
 	# no answers yet (Knowledge Packs land in C9) -> neutral/no-evidence-of-failure default
 	var answer_correct_rate: float = 1.0 if answer_count == 0 else clampf(float(answer_correct_count) / float(answer_count), 0.0, 1.0)
 	var lane_switch_rate: float = clampf(float(lane_dirs.size()) / window_sec / RANGE_LANE_SWITCH_RATE, 0.0, 1.0)
