@@ -7,6 +7,11 @@ extends Node
 var forced_pack_id: String = ""
 var active_pack_id: String = "math_basics"
 
+# Off by default (removed for less on-screen clutter); toggled in
+# Settings. Math Tunnels answer-gates still provide the core decision/
+# error signal without them.
+var obstacles_enabled: bool = false
+
 func consume_forced_pack() -> String:
 	var result: String = forced_pack_id
 	forced_pack_id = ""

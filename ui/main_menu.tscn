@@ -44,9 +44,16 @@ text = "Settings"
 offset_left = 40.0
 offset_top = 570.0
 offset_right = 500.0
-offset_bottom = 900.0
+offset_bottom = 940.0
 
 [node name="SettingsContent" type="VBoxContainer" parent="SettingsPanel"]
+layout_mode = 2
+
+[node name="ObstaclesCheck" type="CheckBox" parent="SettingsPanel/SettingsContent"]
+layout_mode = 2
+text = "Enable obstacles"
+
+[node name="HSeparator1" type="HSeparator" parent="SettingsPanel/SettingsContent"]
 layout_mode = 2
 
 [node name="PrivacyLabel" type="Label" parent="SettingsPanel/SettingsContent"]

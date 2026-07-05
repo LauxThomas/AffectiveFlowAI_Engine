@@ -43,6 +43,7 @@ var _lanes: Array[float] = []
 var _open_zone: Node2D = null
 var _hint_free_lane: int = -1
 var _pack_items: Array = []
+var _asked_questions: Array[String] = []   # shuffled-bag: no repeat until the pool is exhausted
 
 @onready var player: Node2D = $Player
 @onready var score_label: Label = $UI/ScoreLabel
@@ -102,12 +103,14 @@ func _process(delta: float) -> void:
 			_close_zone(n)   # "avoided harmlessly" resolution path
 			n.queue_free()
 
-	# Hindernisse
-	_dist_ob -= move
-	if _dist_ob <= 0.0:
-		_spawn_obstacles(params.difficulty)
-		var gap: float = maxf(OBSTACLE_GAP_FLOOR, speed * OBSTACLE_GAP_SPEED_FACTOR) / maxf(params.spawn_mult, 0.01)
-		_dist_ob = gap + randf_range(60.0, 260.0)
+	# Hindernisse - off by default (Settings toggle); Math Tunnels gates
+	# alone still drive the decision/error signal.
+	if GameSession.obstacles_enabled:
+		_dist_ob -= move
+		if _dist_ob <= 0.0:
+			_spawn_obstacles(params.difficulty)
+			var gap: float = maxf(OBSTACLE_GAP_FLOOR, speed * OBSTACLE_GAP_SPEED_FACTOR) / maxf(params.spawn_mult, 0.01)
+			_dist_ob = gap + randf_range(60.0, 260.0)
 
 	# Münzen - a rare bonus, not a constant stream (no telemetry purpose,
 	# so kept sparse deliberately to reduce on-screen clutter)
@@ -157,18 +160,42 @@ func _spawn_coin() -> void:
 	c.collected.connect(_on_coin_collected)
 	add_child(c)
 
-func _spawn_answer_gate(difficulty: int) -> void:
-	if _pack_items.is_empty():
-		return
+# Shuffled-bag question selection: prefers the current difficulty tier
+# (falling back to the whole pack if none match), but never repeats a
+# question until every other one in that pool has been asked - a plain
+# pick_random() would happily draw the same 1-2 questions over and over
+# whenever the pool is small (e.g. the player stays in FLOW for a while,
+# so difficulty - and therefore the candidate pool - stays fixed).
+func _pick_next_question(difficulty: int) -> Dictionary:
 	var candidates: Array = _pack_items.filter(
 		func(item_variant: Variant) -> bool:
 			return typeof(item_variant) == TYPE_DICTIONARY and int((item_variant as Dictionary).get("difficulty", 0)) == difficulty
 	)
 	var pool: Array = candidates if not candidates.is_empty() else _pack_items
-	var item_variant: Variant = pool.pick_random()
-	if typeof(item_variant) != TYPE_DICTIONARY:
+	var unseen: Array = pool.filter(
+		func(item_variant: Variant) -> bool:
+			return not _asked_questions.has(String((item_variant as Dictionary).get("question", "")))
+	)
+	if unseen.is_empty():
+		var last_question: String = _asked_questions.back() if not _asked_questions.is_empty() else ""
+		_asked_questions.clear()
+		unseen = pool.filter(
+			func(item_variant: Variant) -> bool:
+				return String((item_variant as Dictionary).get("question", "")) != last_question
+		) if pool.size() > 1 else pool
+	var chosen_variant: Variant = unseen.pick_random()
+	if typeof(chosen_variant) != TYPE_DICTIONARY:
+		return {}
+	var chosen: Dictionary = chosen_variant as Dictionary
+	_asked_questions.append(String(chosen.get("question", "")))
+	return chosen
+
+func _spawn_answer_gate(difficulty: int) -> void:
+	if _pack_items.is_empty():
 		return
-	var item: Dictionary = item_variant as Dictionary
+	var item: Dictionary = _pick_next_question(difficulty)
+	if item.is_empty():
+		return
 	var answers: Variant = item.get("answers", [])
 	if typeof(answers) != TYPE_ARRAY or (answers as Array).size() != LANE_COUNT:
 		return

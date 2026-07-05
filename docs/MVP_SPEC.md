@@ -198,3 +198,36 @@ room (340px gap floor and a steeper speed factor, up from 240/0.55), and
 the clearance around Math Tunnels gates widened (340px, up from 260) for a
 cleaner stage. Verified clean import/export/runtime after reverting all
 temporary comparison instrumentation.
+
+## Post-MVP: obstacles off by default, ESC pause menu, question-repeat fix
+Three follow-up changes:
+
+- **Obstacles removed by default**, with a "Enable obstacles" checkbox in
+  Settings (`GameSession.obstacles_enabled`, defaults false) to bring them
+  back. Since this drops the HIT-based error signal for most players,
+  `FeatureWindow.error_rate` now also counts wrong ANSWER events (the spec
+  already calls these "an error signal"; only HIT was wired in before) -
+  Math Tunnels alone still drives the error/decision signal.
+- **ESC pause menu** (`ui/pause_menu.gd`/`.tscn`, instanced in `game/main.tscn`):
+  toggles `get_tree().paused` and shows a Resume/Main Menu overlay. The
+  overlay's `process_mode` is `ALWAYS` so it (and its buttons) keep
+  receiving input while everything else - obstacles/coins/gates,
+  AffectiveEngine's tick - correctly freezes.
+- **Fixed a real bug: questions stopped changing.** `_spawn_answer_gate`
+  filtered candidates to the current difficulty tier and called
+  `pick_random()` with no memory - fine with a big pool, but since
+  `RuleBasedPolicy` only moves the difficulty tier while sustained in
+  BOREDOM/OVERWHELM (not FLOW, where most casual play sits), difficulty
+  gets "stuck," and this pack has only 2 questions at the default tier (1).
+  Independent random draws from a pool of 2 produced long runs of the same
+  question by chance. Replaced with a shuffled-bag (`_pick_next_question`):
+  never repeats a question until every other one in the matched pool (or
+  the whole pack, as a fallback) has been asked, and avoids an immediate
+  repeat right after a bag reset too.
+
+Verified: forced `_pick_next_question(1)` ten times in a row and confirmed
+zero consecutive repeats (`15-8=? / 6+7=? / 15-8=? / ...` alternating,
+vs. the old code's unbounded-repeat risk); confirmed `obstacles_enabled`
+defaults false; simulated an ESC keypress via `Input.parse_input_event`
+twice and confirmed `get_tree().paused` toggled true then false. Clean
+import/export/runtime after reverting all test instrumentation.

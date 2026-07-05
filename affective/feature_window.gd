@@ -37,6 +37,7 @@ func extract() -> Dictionary:
 	var decision_count := 0
 	var answer_count := 0
 	var answer_correct_count := 0
+	var wrong_answer_count := 0
 	var idle_count := 0
 
 	for event in _events:
@@ -58,6 +59,8 @@ func extract() -> Dictionary:
 				answer_count += 1
 				if bool(event.get("correct", false)):
 					answer_correct_count += 1
+				else:
+					wrong_answer_count += 1
 			AffectiveTypes.EventType.IDLE:
 				idle_count += 1
 
@@ -82,7 +85,9 @@ func extract() -> Dictionary:
 	var hesitation_rate: float = 0.0 if lane_dirs.is_empty() else clampf(float(reversals) / float(lane_dirs.size()), 0.0, 1.0)
 
 	var reaction_latency_mean: float = 0.0 if latencies_norm.is_empty() else _mean(latencies_norm)
-	var error_rate: float = clampf(float(hit_count) / float(maxi(decision_count, 1)), 0.0, 1.0)
+	# Both obstacle HITs and wrong ANSWERs are error signals (spec 4.5); with
+	# obstacles off by default, wrong answers keep this feature meaningful.
+	var error_rate: float = clampf(float(hit_count + wrong_answer_count) / float(maxi(decision_count, 1)), 0.0, 1.0)
 	# no answers yet (Knowledge Packs land in C9) -> neutral/no-evidence-of-failure default
 	var answer_correct_rate: float = 1.0 if answer_count == 0 else clampf(float(answer_correct_count) / float(answer_count), 0.0, 1.0)
 	var lane_switch_rate: float = clampf(float(lane_dirs.size()) / window_sec / RANGE_LANE_SWITCH_RATE, 0.0, 1.0)
