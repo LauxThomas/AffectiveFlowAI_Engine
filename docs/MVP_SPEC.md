@@ -159,3 +159,27 @@ confirmed the file was created, reloaded correctly with every field intact,
 and deleted cleanly; then confirmed the validation path correctly rejects
 a question with no correct answer marked (clear inline message, no file
 written) - reverted the test hook and the temporary main-scene override.
+
+## C12 — Consent UI (final commit)
+The main menu's Settings panel now has the real, user-facing consent
+checkbox (defaults unchecked, matching `SessionLogger`'s own default-off),
+a live "N session(s) on disk" status line, an Export Sessions button
+(desktop `FileDialog`, disabled+tooltipped on Web, bundles every session's
+content into one JSON file), and a Delete All Sessions button gated behind
+a `ConfirmationDialog` (irreversible, so it asks first). This replaces the
+C7 dev-only F4 HUD toggle, which is removed - the HUD still shows live
+logging status, just no longer toggles it. Verified end-to-end since
+`AffectiveEngine`'s tick Timer runs regardless of which scene is active:
+enabled consent, waited 2s, confirmed a session file appeared and the
+status label updated; exported and confirmed the bundle contained the
+session's real content; deleted and confirmed zero sessions remained;
+disabled consent and confirmed it reports off again - all via the same
+handler methods the UI buttons call. Clean import/export/runtime with the
+temporary test code fully reverted (diff is purely additive).
+
+This is the last of the 13 planned commits - the full AffectiveFlowAI MVP
+loop (telemetry -> features -> heuristic estimator -> per-user baseline ->
+rule-based adaptation -> Math Tunnels -> session logging -> debug HUD ->
+content editor -> consent UI) is wired up end-to-end and has been verified
+after every single commit via headless import, Web export, and targeted
+runtime checks.

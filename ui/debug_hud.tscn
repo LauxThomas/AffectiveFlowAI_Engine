@@ -128,7 +128,7 @@ text = "speed x1.00  spawn x1.00  diff 1  hint 0  assist:false"
 [node name="LoggingLabel" type="Label" parent="Panel/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-text = "Logging: off (F4)"
+text = "Logging: off (toggle in Settings)"
 
 [node name="PacksLabel" type="Label" parent="Panel/VBoxContainer"]
 layout_mode = 2

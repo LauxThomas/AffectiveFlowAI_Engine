@@ -49,7 +49,34 @@ offset_bottom = 900.0
 [node name="SettingsContent" type="VBoxContainer" parent="SettingsPanel"]
 layout_mode = 2
 
-[node name="PlaceholderLabel" type="Label" parent="SettingsPanel/SettingsContent"]
+[node name="PrivacyLabel" type="Label" parent="SettingsPanel/SettingsContent"]
 layout_mode = 2
 autowrap_mode = 2
-text = "Privacy & data settings coming soon."
+text = "Session logging is anonymous, on-device only, and off by default. Enabling it records interaction telemetry to help train a future model."
+
+[node name="ConsentCheck" type="CheckBox" parent="SettingsPanel/SettingsContent"]
+layout_mode = 2
+text = "Enable anonymous session logging"
+
+[node name="SessionsStatusLabel" type="Label" parent="SettingsPanel/SettingsContent"]
+layout_mode = 2
+text = "0 session(s) on disk"
+
+[node name="SessionButtons" type="HBoxContainer" parent="SettingsPanel/SettingsContent"]
+layout_mode = 2
+
+[node name="ExportSessionsButton" type="Button" parent="SettingsPanel/SettingsContent/SessionButtons"]
+layout_mode = 2
+text = "Export Sessions..."
+
+[node name="DeleteSessionsButton" type="Button" parent="SettingsPanel/SettingsContent/SessionButtons"]
+layout_mode = 2
+text = "Delete All Sessions"
+
+[node name="ExportSessionsDialog" type="FileDialog" parent="SettingsPanel"]
+title = "Export Sessions"
+size = Vector2i(480, 400)
+
+[node name="DeleteSessionsConfirm" type="ConfirmationDialog" parent="SettingsPanel"]
+title = "Delete all sessions?"
+dialog_text = "This permanently deletes every logged session file from this device. This cannot be undone."

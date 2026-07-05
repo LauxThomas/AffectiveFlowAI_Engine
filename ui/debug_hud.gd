@@ -36,13 +36,8 @@ func _refresh_packs_label() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
-		if key_event.pressed and not key_event.echo:
-			if key_event.keycode == KEY_F3:
-				panel.visible = not panel.visible
-			# Dev-only logging toggle - replaced by a real consent checkbox
-			# in the main menu once it exists. Consent still defaults off.
-			elif key_event.keycode == KEY_F4:
-				AffectiveEngine.set_logging_consent(not AffectiveEngine.is_logging_enabled())
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F3:
+			panel.visible = not panel.visible
 
 func _process(_delta: float) -> void:
 	if not panel.visible:
@@ -55,9 +50,9 @@ func _process(_delta: float) -> void:
 		if bar != null:
 			bar.value = float(features.get(key, 0.0)) * 100.0
 	if AffectiveEngine.is_logging_enabled():
-		logging_label.text = "Logging: ON (F4) - %d ticks" % AffectiveEngine.debug_logged_ticks()
+		logging_label.text = "Logging: ON - %d ticks (toggle in Settings)" % AffectiveEngine.debug_logged_ticks()
 	else:
-		logging_label.text = "Logging: off (F4)"
+		logging_label.text = "Logging: off (toggle in Settings)"
 	var log_lines: Array[String] = AffectiveEngine.debug_event_log()
 	if log_lines != _last_log:
 		_last_log = log_lines
