@@ -231,3 +231,33 @@ vs. the old code's unbounded-repeat risk); confirmed `obstacles_enabled`
 defaults false; simulated an ESC keypress via `Input.parse_input_event`
 twice and confirmed `get_tree().paused` toggled true then false. Clean
 import/export/runtime after reverting all test instrumentation.
+
+## fix/randomize-math-questions branch: real "same question" bug + always-center-lane bug
+User report: questions were always "3+4=?" and "9-5=?", and the correct
+answer was always in the center lane. Two root causes, both now fixed:
+
+- `_pick_next_question`'s difficulty filter was a hard filter applied
+  BEFORE checking what's unseen - since `RuleBasedPolicy` only moves the
+  difficulty tier during sustained BOREDOM/OVERWHELM (never during normal
+  FLOW play, and real play often drifts down to/gets stuck at low
+  difficulty), the candidate pool could shrink to exactly the 2 questions
+  tagged difficulty 0 ("3+4=?"/"9-5=?" in the sample pack) - the previous
+  commit's anti-repeat bag was scoped to that same narrow 2-item pool, so
+  it could alternate between them but never break out. Rewired: the
+  shuffled-bag now runs over the WHOLE pack first (guaranteeing every
+  distinct question surfaces before any repeat), with difficulty applied
+  only as a preference within the not-yet-shown set.
+- The correct answer's lane was just whatever slot it happened to occupy
+  in the pack's `answers` array - the sample data has `correct_index: 1`
+  on 6 of 8 questions (including both difficulty-0 ones), so it visually
+  always landed center. `_spawn_answer_gate` now shuffles a per-spawn lane
+  permutation so the correct answer's on-screen lane is randomized every
+  time, independent of what the underlying data says.
+
+Verified by calling `_pick_next_question(0)` twenty times in a row
+(deliberately simulating the reported stuck-at-difficulty-0 scenario):
+all 8 distinct pack questions appeared, and a parallel lane-shuffle check
+showed the correct answer landing in all 3 lanes across the same 20 draws.
+Clean import/export/runtime after reverting test instrumentation. Done on
+a feature branch (not main), per updated workflow preference - the user
+merges branches by hand.

@@ -160,30 +160,35 @@ func _spawn_coin() -> void:
 	c.collected.connect(_on_coin_collected)
 	add_child(c)
 
-# Shuffled-bag question selection: prefers the current difficulty tier
-# (falling back to the whole pack if none match), but never repeats a
-# question until every other one in that pool has been asked - a plain
-# pick_random() would happily draw the same 1-2 questions over and over
-# whenever the pool is small (e.g. the player stays in FLOW for a while,
-# so difficulty - and therefore the candidate pool - stays fixed).
+# Shuffled-bag question selection over the WHOLE pack: guarantees every
+# distinct question is shown before any repeat. Difficulty is a soft
+# preference applied only within the not-yet-shown set, never a hard
+# filter - an earlier version filtered candidates down to an exact
+# difficulty match first, which could shrink the pool to just 1-2
+# questions whenever the adaptation policy's difficulty tier got stuck
+# (RuleBasedPolicy only moves it while sustained in BOREDOM/OVERWHELM, not
+# FLOW, where most casual play sits) - so the player kept seeing the same
+# couple of questions and it read as "the questions never change."
 func _pick_next_question(difficulty: int) -> Dictionary:
-	var candidates: Array = _pack_items.filter(
+	var unseen: Array = _pack_items.filter(
 		func(item_variant: Variant) -> bool:
-			return typeof(item_variant) == TYPE_DICTIONARY and int((item_variant as Dictionary).get("difficulty", 0)) == difficulty
-	)
-	var pool: Array = candidates if not candidates.is_empty() else _pack_items
-	var unseen: Array = pool.filter(
-		func(item_variant: Variant) -> bool:
-			return not _asked_questions.has(String((item_variant as Dictionary).get("question", "")))
+			return typeof(item_variant) == TYPE_DICTIONARY and not _asked_questions.has(String((item_variant as Dictionary).get("question", "")))
 	)
 	if unseen.is_empty():
 		var last_question: String = _asked_questions.back() if not _asked_questions.is_empty() else ""
 		_asked_questions.clear()
-		unseen = pool.filter(
+		unseen = _pack_items.filter(
 			func(item_variant: Variant) -> bool:
-				return String((item_variant as Dictionary).get("question", "")) != last_question
-		) if pool.size() > 1 else pool
-	var chosen_variant: Variant = unseen.pick_random()
+				return typeof(item_variant) == TYPE_DICTIONARY and String((item_variant as Dictionary).get("question", "")) != last_question
+		) if _pack_items.size() > 1 else _pack_items
+
+	var matched: Array = unseen.filter(
+		func(item_variant: Variant) -> bool:
+			return int((item_variant as Dictionary).get("difficulty", 0)) == difficulty
+	)
+	var pool: Array = matched if not matched.is_empty() else unseen
+
+	var chosen_variant: Variant = pool.pick_random()
 	if typeof(chosen_variant) != TYPE_DICTIONARY:
 		return {}
 	var chosen: Dictionary = chosen_variant as Dictionary
@@ -204,12 +209,20 @@ func _spawn_answer_gate(difficulty: int) -> void:
 	var question_id: String = String(item.get("question", ""))
 	var question_start_usec := Time.get_ticks_usec()
 
+	# Randomize which lane each answer lands in every spawn - otherwise the
+	# correct answer's on-screen position is just whatever slot the content
+	# author happened to type it into (in the sample pack, that was lane 1
+	# for most questions), which a player would quickly learn to exploit.
+	var lane_order: Array[int] = [0, 1, 2]
+	lane_order.shuffle()
+
 	# Deliberate divergence from the obstacle fairness invariant: an
 	# answer-gate covers ALL lanes (every lane holds one token), so the
 	# player always answers something. Do not "fix" this into a free lane.
 	for lane in range(LANE_COUNT):
+		var source_slot: int = lane_order[lane]
 		var token := ANSWER_TOKEN.instantiate() as AnswerToken
-		token.setup(String(answer_list[lane]), lane == correct_index, question_id, question_start_usec)
+		token.setup(String(answer_list[source_slot]), source_slot == correct_index, question_id, question_start_usec)
 		token.position = Vector2(_lanes[lane], -60.0)
 		token.add_to_group("scroll")
 		token.add_to_group("decision_zone")
@@ -217,7 +230,7 @@ func _spawn_answer_gate(difficulty: int) -> void:
 		add_child(token)
 
 	question_label.text = question_id
-	_hint_free_lane = correct_index   # reuses the existing hint beacon mechanism
+	_hint_free_lane = lane_order.find(correct_index)   # reuses the existing hint beacon mechanism
 	# keep obstacles/coins out of this gate's immediate footprint
 	_dist_ob = maxf(_dist_ob, GATE_CLEARANCE_PX)
 	_dist_coin = maxf(_dist_coin, GATE_CLEARANCE_PX)
