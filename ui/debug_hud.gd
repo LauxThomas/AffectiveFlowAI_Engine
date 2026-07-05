@@ -6,14 +6,15 @@ const FEATURE_KEYS: Array[String] = [
 ]
 
 @onready var panel: PanelContainer = $Panel
-@onready var state_label: Label = $Panel/VBoxContainer/StateLabel
-@onready var load_meter: ProgressBar = $Panel/VBoxContainer/LoadRow/LoadMeter
-@onready var confidence_label: Label = $Panel/VBoxContainer/ConfidenceLabel
-@onready var params_label: Label = $Panel/VBoxContainer/ParamsLabel
-@onready var feature_bars: GridContainer = $Panel/VBoxContainer/FeatureBars
-@onready var logging_label: Label = $Panel/VBoxContainer/LoggingLabel
-@onready var packs_label: Label = $Panel/VBoxContainer/PacksLabel
-@onready var event_log: RichTextLabel = $Panel/VBoxContainer/EventLog
+@onready var state_label: Label = $Panel/Scroll/VBoxContainer/StateLabel
+@onready var load_meter: ProgressBar = $Panel/Scroll/VBoxContainer/LoadRow/LoadMeter
+@onready var confidence_label: Label = $Panel/Scroll/VBoxContainer/ConfidenceLabel
+@onready var load_chart: LoadChart = $Panel/Scroll/VBoxContainer/LoadChart
+@onready var params_label: Label = $Panel/Scroll/VBoxContainer/ParamsLabel
+@onready var feature_bars: GridContainer = $Panel/Scroll/VBoxContainer/FeatureBars
+@onready var logging_label: Label = $Panel/Scroll/VBoxContainer/LoggingLabel
+@onready var packs_label: Label = $Panel/Scroll/VBoxContainer/PacksLabel
+@onready var event_log: RichTextLabel = $Panel/Scroll/VBoxContainer/EventLog
 
 var _last_log: Array[String] = []
 
@@ -44,6 +45,7 @@ func _process(_delta: float) -> void:
 		return
 	load_meter.value = AffectiveEngine.debug_load() * 100.0
 	confidence_label.text = "Confidence: %d%%" % int(AffectiveEngine.debug_confidence() * 100.0)
+	load_chart.update_data(AffectiveEngine.debug_load_history(), AffectiveEngine.debug_state_history())
 	var features: Dictionary = AffectiveEngine.debug_features()
 	for key in FEATURE_KEYS:
 		var bar := feature_bars.get_node_or_null(key) as ProgressBar

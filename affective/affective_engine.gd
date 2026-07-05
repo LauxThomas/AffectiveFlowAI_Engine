@@ -28,6 +28,8 @@ const BASELINE_SAVE_INTERVAL_TICKS := 50   # ~7.5s at 150ms/tick
 
 const MAX_LOG_LINES := 15   # Debug HUD's scrolling event log (spec 4.8)
 
+const MAX_HISTORY := 600   # ~90s of ticks at 150ms/tick - Debug HUD's live load chart
+
 var _current_state: AffectiveTypes.CognitiveState = AffectiveTypes.CognitiveState.FLOW
 var _current_params: AdaptationParams = AdaptationParams.new()
 var _telemetry: TelemetryCollector = TelemetryCollector.new()
@@ -46,6 +48,8 @@ var _ticks_since_save: int = 0
 var _event_log: Array[String] = []
 var _prev_assist: bool = false
 var _prev_hint_level: int = 0
+var _load_history: Array[float] = []
+var _state_history: Array[int] = []
 
 func _ready() -> void:
 	_baseline = UserBaseline.load_or_create()
@@ -79,6 +83,14 @@ func current_state() -> AffectiveTypes.CognitiveState:
 
 func debug_event_log() -> Array[String]:
 	return _event_log.duplicate()
+
+# Live + past status for the Debug HUD's chart - a rolling window, oldest
+# first, capped at MAX_HISTORY. Parallel arrays (same index = same tick).
+func debug_load_history() -> Array[float]:
+	return _load_history.duplicate()
+
+func debug_state_history() -> Array[int]:
+	return _state_history.duplicate()
 
 func debug_features() -> Dictionary:
 	return _last_features
@@ -127,6 +139,15 @@ func _on_tick() -> void:
 		_current_state = _pending_state
 		state_changed.emit(_current_state)
 		_log("State -> %s" % AffectiveTypes.state_name(_current_state))
+
+	# Chart history: the continuous raw load, paired with the accepted
+	# (dwell-gated) state rather than the raw per-tick guess, so the
+	# chart's color-coding matches what's shown everywhere else.
+	_load_history.append(_last_load)
+	_state_history.append(int(_current_state))
+	if _load_history.size() > MAX_HISTORY:
+		_load_history.pop_front()
+		_state_history.pop_front()
 
 	# Two independent consumers (main.gd via get_params(), the HUD via this
 	# signal) each get their own duplicated copy - never the shared instance.

@@ -231,3 +231,25 @@ vs. the old code's unbounded-repeat risk); confirmed `obstacles_enabled`
 defaults false; simulated an ESC keypress via `Input.parse_input_event`
 twice and confirmed `get_tree().paused` toggled true then false. Clean
 import/export/runtime after reverting all test instrumentation.
+
+## feature/live-cognitive-load-chart branch (from main): live load history chart
+User wanted to see current and past cognitive-load status live, not just an
+instant reading. `AffectiveEngine` now keeps a rolling history (`MAX_HISTORY
+= 600`, ~90s at 150ms/tick) of `load` paired with the accepted (dwell-gated)
+state each tick, exposed via `debug_load_history()`/`debug_state_history()`.
+New `ui/load_chart.gd` (`class_name LoadChart`, plain `Control` with a custom
+`_draw()`) plots it as a line graph, color-coded per segment by the state at
+that point (same colors as the rest of the HUD), with dashed reference lines
+at the BOREDOM/OVERWHELM thresholds so the FLOW band is visible at a glance.
+Wired into the Debug HUD (F3) right under the load meter; the HUD's panel
+also gained a `ScrollContainer` wrapper since it was getting tall.
+
+Verified by forcing the HUD panel visible and running for ~14s: confirmed
+`load_history`/`state_history` grow in lockstep every tick (0 -> 94 entries),
+values stayed sane (bounded in [0,1], visible movement as the estimator
+reacted to real headless play), and zero runtime errors from the chart's
+`_draw()` processing real accumulated data - confirms the draw code (segment
+coloring via `AffectiveTypes.STATE_COLOR`, threshold lines) is sound. Clean
+import/export/runtime after reverting the test instrumentation. Built on a
+fresh branch off `main` (not the still-unmerged CLT/randomize branch) since
+it doesn't touch any of the same files.
