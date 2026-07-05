@@ -46,37 +46,55 @@ offset_top = 570.0
 offset_right = 500.0
 offset_bottom = 940.0
 
-[node name="SettingsContent" type="VBoxContainer" parent="SettingsPanel"]
+[node name="SettingsScroll" type="ScrollContainer" parent="SettingsPanel"]
 layout_mode = 2
 
-[node name="ObstaclesCheck" type="CheckBox" parent="SettingsPanel/SettingsContent"]
+[node name="SettingsContent" type="VBoxContainer" parent="SettingsPanel/SettingsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ObstaclesCheck" type="CheckBox" parent="SettingsPanel/SettingsScroll/SettingsContent"]
 layout_mode = 2
 text = "Enable obstacles"
 
-[node name="HSeparator1" type="HSeparator" parent="SettingsPanel/SettingsContent"]
+[node name="QuestionIntervalRow" type="HBoxContainer" parent="SettingsPanel/SettingsScroll/SettingsContent"]
 layout_mode = 2
 
-[node name="PrivacyLabel" type="Label" parent="SettingsPanel/SettingsContent"]
+[node name="Label" type="Label" parent="SettingsPanel/SettingsScroll/SettingsContent/QuestionIntervalRow"]
+layout_mode = 2
+text = "Question interval (sec):"
+
+[node name="QuestionIntervalSpin" type="SpinBox" parent="SettingsPanel/SettingsScroll/SettingsContent/QuestionIntervalRow"]
+layout_mode = 2
+min_value = 10.0
+max_value = 300.0
+step = 5.0
+value = 60.0
+
+[node name="HSeparator1" type="HSeparator" parent="SettingsPanel/SettingsScroll/SettingsContent"]
+layout_mode = 2
+
+[node name="PrivacyLabel" type="Label" parent="SettingsPanel/SettingsScroll/SettingsContent"]
 layout_mode = 2
 autowrap_mode = 2
 text = "Session logging is anonymous, on-device only, and off by default. Enabling it records interaction telemetry to help train a future model."
 
-[node name="ConsentCheck" type="CheckBox" parent="SettingsPanel/SettingsContent"]
+[node name="ConsentCheck" type="CheckBox" parent="SettingsPanel/SettingsScroll/SettingsContent"]
 layout_mode = 2
 text = "Enable anonymous session logging"
 
-[node name="SessionsStatusLabel" type="Label" parent="SettingsPanel/SettingsContent"]
+[node name="SessionsStatusLabel" type="Label" parent="SettingsPanel/SettingsScroll/SettingsContent"]
 layout_mode = 2
 text = "0 session(s) on disk"
 
-[node name="SessionButtons" type="HBoxContainer" parent="SettingsPanel/SettingsContent"]
+[node name="SessionButtons" type="HBoxContainer" parent="SettingsPanel/SettingsScroll/SettingsContent"]
 layout_mode = 2
 
-[node name="ExportSessionsButton" type="Button" parent="SettingsPanel/SettingsContent/SessionButtons"]
+[node name="ExportSessionsButton" type="Button" parent="SettingsPanel/SettingsScroll/SettingsContent/SessionButtons"]
 layout_mode = 2
 text = "Export Sessions..."
 
-[node name="DeleteSessionsButton" type="Button" parent="SettingsPanel/SettingsContent/SessionButtons"]
+[node name="DeleteSessionsButton" type="Button" parent="SettingsPanel/SettingsScroll/SettingsContent/SessionButtons"]
 layout_mode = 2
 text = "Delete All Sessions"
 
