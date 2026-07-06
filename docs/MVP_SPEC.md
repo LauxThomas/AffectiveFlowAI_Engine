@@ -332,3 +332,29 @@ still 3 answers) and hint_level 2 (down to 2 answers); confirmed ESC with
 no overlay active correctly paused the game via the normal pause menu.
 Clean import/export/runtime (game, menu, and content editor scenes) after
 reverting all test instrumentation.
+
+## fix/idle-reflects-missed-opportunities branch (from main): idle no longer means "game had nothing for you"
+User feedback: `idle_ratio` was measured as "no input for 3s," regardless of
+whether there was anything on screen to react to. With obstacles off by
+default, that meant long ordinary stretches of play got flagged as
+disengagement through no fault of the player - the game just wasn't asking
+for anything.
+
+Redefined idle to be about missed *opportunities*, not wall-clock silence:
+- Removed the whole time-based idle timer from `player.gd`
+  (`IDLE_THRESHOLD_USEC`, `_last_input_usec`, `_idle_reported`,
+  `_mark_input_active()`) and `AffectiveTypes.EventType.IDLE` itself - both
+  now fully unused.
+- `main.gd`'s decision-zone tracking already recorded `latency_usec = -1`
+  when a real obstacle's zone closed with zero input the whole time it was
+  open (a genuine "ignored it" case) - `FeatureWindow.extract()` now derives
+  `idle_ratio` directly from that: the fraction of actual decision-zone
+  opportunities with no response at all, defaulting to a neutral 0 when
+  there were no opportunities yet (same pattern as `answer_correct_rate`).
+
+Verified: with obstacles off (default), 4s of zero input still measured
+`idle_ratio = 0.0` (previously this would have climbed); with obstacles
+forced on and zero input, `idle_ratio = 1.0` once real decision zones opened
+and closed unanswered - confirming the signal now tracks genuine missed
+opportunities instead of ordinary silence. Clean import/export/runtime.
+Branched fresh off `main`.

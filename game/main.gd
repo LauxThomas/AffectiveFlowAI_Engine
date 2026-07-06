@@ -261,6 +261,9 @@ func _close_zone(n: Node2D) -> void:
 		return
 	var entered_usec: int = int(n.get_meta("_zone_entered_usec"))
 	var first_input_usec: int = int(n.get_meta("_zone_first_input_usec"))
+	# -1 = zero input the whole time this zone was open - a real obstacle
+	# was there and got ignored. FeatureWindow uses this (not wall-clock
+	# silence) to compute idle_ratio.
 	var latency_usec: int = (first_input_usec - entered_usec) if first_input_usec > 0 else -1
 	AffectiveEngine.report_event(AffectiveTypes.EventType.DECISION, {
 		"latency_usec": latency_usec,

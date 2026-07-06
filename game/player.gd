@@ -3,7 +3,6 @@ extends Area2D
 const SLIDE_SPEED := 1600.0   # px/s beim Lane-Wechsel
 const SWIPE_MIN := 40.0       # Mindest-Swipe-Distanz in px
 const MAX_TOUCH_POINTS := 40  # cap against a pathological held-drag
-const IDLE_THRESHOLD_USEC := 3_000_000   # 3s of no meaningful input
 
 signal lane_switched(dir: int, usec: int)
 
@@ -15,8 +14,6 @@ var _touch_start := Vector2.ZERO
 var _touching := false
 var _touch_points: Array[Vector2] = []
 var _touch_start_usec := 0
-var _last_input_usec := 0
-var _idle_reported := false
 var _hint_lane := -1
 
 func setup(lanes: Array[float], start_lane: int) -> void:
@@ -24,7 +21,6 @@ func setup(lanes: Array[float], start_lane: int) -> void:
 	current_lane = clampi(start_lane, 0, lane_x.size() - 1)
 	position.x = lane_x[current_lane]
 	_target_x = position.x
-	_last_input_usec = Time.get_ticks_usec()
 
 func set_hint_lane(lane: int) -> void:
 	_hint_lane = lane
@@ -33,7 +29,6 @@ func _input(event: InputEvent) -> void:
 	# Tastatur: A/D oder Pfeiltasten
 	if event is InputEventKey:
 		if event.pressed and not event.echo:
-			_mark_input_active()
 			match event.keycode:
 				KEY_A, KEY_LEFT:
 					_move_lane(-1)
@@ -60,7 +55,6 @@ func _input(event: InputEvent) -> void:
 		_track_touch_point(event.position)
 
 func _start_touch(pos: Vector2) -> void:
-	_mark_input_active()
 	_touch_start = pos
 	_touch_start_usec = Time.get_ticks_usec()
 	_touch_points = [pos]
@@ -69,10 +63,6 @@ func _start_touch(pos: Vector2) -> void:
 func _track_touch_point(pos: Vector2) -> void:
 	if _touch_points.size() < MAX_TOUCH_POINTS:
 		_touch_points.append(pos)
-
-func _mark_input_active() -> void:
-	_last_input_usec = Time.get_ticks_usec()
-	_idle_reported = false
 
 func _handle_swipe(swipe: Vector2, duration_usec: int) -> void:
 	var accepted := absf(swipe.x) >= SWIPE_MIN and absf(swipe.x) > absf(swipe.y)
@@ -111,9 +101,6 @@ func _process(delta: float) -> void:
 		position.x = move_toward(position.x, _target_x, SLIDE_SPEED * delta)
 	_run_t += delta
 	queue_redraw()
-	if not _idle_reported and Time.get_ticks_usec() - _last_input_usec > IDLE_THRESHOLD_USEC:
-		AffectiveEngine.report_event(AffectiveTypes.EventType.IDLE, {})
-		_idle_reported = true
 
 func flash() -> void:
 	modulate = Color(1.0, 0.4, 0.4)

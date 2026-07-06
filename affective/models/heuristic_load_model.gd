@@ -39,7 +39,7 @@ const W_HESITATION := 1.0
 const W_SWIPE_VAR := 0.8          # proxy for z(jerk)/z(submovements)
 const W_ERROR_RATE := 1.2         # proxy for z(error_burst)
 const W_ANSWER_INCORRECT := 1.0   # not z-scored: already a bounded [0,1] rate
-const W_IDLE := 0.4
+const W_IDLE := 0.4   # idle_ratio = missed-response rate on real decision zones, not wall-clock silence
 const W_THROUGHPUT := 0.6   # subtracted - higher throughput lowers load
 const GAIN_K := 4.0         # sigmoid steepness
 
@@ -51,6 +51,9 @@ const GAIN_K := 4.0         # sigmoid steepness
 # Sustained-state hysteresis (dwell-gating) lives in AffectiveEngine, not here.
 const LOW_LOAD_THRESHOLD := 0.35
 const HIGH_LOAD_THRESHOLD := 0.65
+# idle_ratio here means "ignored real decision-zone opportunities" (see
+# FeatureWindow), not silence in general - so this genuinely means "didn't
+# even try to dodge," not "there was nothing on screen."
 const BOREDOM_IDLE_THRESHOLD := 0.3
 
 var _baseline: UserBaseline
