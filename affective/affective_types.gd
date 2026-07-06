@@ -2,7 +2,7 @@ extends RefCounted
 class_name AffectiveTypes
 
 enum CognitiveState { BOREDOM, FLOW, OVERWHELM }
-enum EventType { LANE_SWITCH, SWIPE, DECISION, ANSWER, HIT, IDLE }
+enum EventType { LANE_SWITCH, SWIPE, DECISION, ANSWER, HIT }
 
 const STATE_COLOR: Dictionary = {
 	CognitiveState.BOREDOM: Color("4a90d9"),

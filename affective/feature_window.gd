@@ -13,7 +13,6 @@ const MAX_EVENTS := 20
 const RANGE_SWIPE_VELOCITY := 2500.0        # px/s
 const RANGE_REACTION_LATENCY_MS := 1500.0
 const RANGE_LANE_SWITCH_RATE := 3.0         # switches/sec
-const IDLE_EVENT_SPAN_SEC := 3.0            # must match player.gd's IDLE_THRESHOLD_USEC
 
 var _events: Array[Dictionary] = []
 
@@ -35,10 +34,10 @@ func extract() -> Dictionary:
 	var latencies_norm: Array[float] = []
 	var hit_count := 0
 	var decision_count := 0
+	var no_response_count := 0
 	var answer_count := 0
 	var answer_correct_count := 0
 	var wrong_answer_count := 0
-	var idle_count := 0
 
 	for event in _events:
 		var event_type: int = int(event["type"])
@@ -51,6 +50,8 @@ func extract() -> Dictionary:
 			AffectiveTypes.EventType.DECISION:
 				decision_count += 1
 				var latency_usec: int = int(event.get("latency_usec", -1))
+				if latency_usec < 0:
+					no_response_count += 1   # a real obstacle appeared and got zero input the whole time
 				var latency_ms: float = RANGE_REACTION_LATENCY_MS if latency_usec < 0 else float(latency_usec) / 1000.0
 				latencies_norm.append(clampf(latency_ms / RANGE_REACTION_LATENCY_MS, 0.0, 1.0))
 			AffectiveTypes.EventType.HIT:
@@ -61,8 +62,6 @@ func extract() -> Dictionary:
 					answer_correct_count += 1
 				else:
 					wrong_answer_count += 1
-			AffectiveTypes.EventType.IDLE:
-				idle_count += 1
 
 	var window_sec: float = maxf(float(WINDOW_USEC) / 1_000_000.0, 0.001)
 
@@ -93,7 +92,13 @@ func extract() -> Dictionary:
 	# no answers yet (Knowledge Packs land in C9) -> neutral/no-evidence-of-failure default
 	var answer_correct_rate: float = 1.0 if answer_count == 0 else clampf(float(answer_correct_count) / float(answer_count), 0.0, 1.0)
 	var lane_switch_rate: float = clampf(float(lane_dirs.size()) / window_sec / RANGE_LANE_SWITCH_RATE, 0.0, 1.0)
-	var idle_ratio: float = clampf(float(idle_count) * IDLE_EVENT_SPAN_SEC / window_sec, 0.0, 1.0)
+	# "Idle" is deliberately NOT wall-clock silence - most silence just means
+	# the game gave the player nothing to react to (obstacles are off by
+	# default), which says nothing about the player. Instead this is the
+	# share of actual decision-zone opportunities where the player gave zero
+	# input the whole time - a real, player-caused disengagement signal.
+	# No opportunities yet -> neutral default, same pattern as answer_correct_rate.
+	var idle_ratio: float = 0.0 if decision_count == 0 else clampf(float(no_response_count) / float(decision_count), 0.0, 1.0)
 
 	return {
 		"swipe_velocity_mean": swipe_velocity_mean,
