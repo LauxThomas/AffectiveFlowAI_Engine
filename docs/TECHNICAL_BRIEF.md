@@ -1,6 +1,8 @@
 # AffectiveFlowAI Engine — Technical Brief
 
-*Last updated: 2026-07-13. This document is kept current as the system evolves — treat it as the canonical external-facing technical description, distinct from `docs/MVP_SPEC.md` (the internal commit-by-commit build log).*
+*Last updated: 2026-07-14. This document is kept current as the system evolves — treat it as the canonical external-facing technical description, distinct from `docs/MVP_SPEC.md` (the internal commit-by-commit build log).*
+
+**Visual identity reference:** https://claude.ai/code/artifact/e10daf25-67b5-43b7-b762-8fc7f30dc604 — palette, type, and screen mockups derived from the product's own signal (the live tri-state load chart) and existing in-game colors. A design reference page, not a `.fig` file; intended as direct creative direction for a designer, or as the spec to rebuild from in Figma. *Currently private — see note in §11.*
 
 ## 1. What it is
 
@@ -101,4 +103,8 @@ A cloned formula with no accumulated personalization data behind it is an untune
 | Educational content (Cognitive Load Theory) | Live, paused question overlay, flow-state-scaffolded |
 | Opt-in on-device data logging | Live |
 | Trained on-device ML model | Not started — data pipeline ready, needs a labelled pilot (§5) |
-| Visual/UI design pass | Not started — functional but not visually polished |
+| Visual/UI design pass | In progress — see §11 |
+
+## 11. Visual identity reference — access note
+
+The reference linked at the top of this document is currently **private** by default (Claude Artifacts start private). Making it public/shareable is a one-time manual step, not something that can be done from this repo or by an automated process: open the link, use the page's own share menu, and set it to shared/public. Once that's done the link above works for anyone, including outside collaborators (e.g. a contracted designer).
