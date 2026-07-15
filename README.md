@@ -1,45 +1,95 @@
-# Lane Runner (Godot 4.x) – Subway-Surfers-Style
+# Lane Runner — AffectiveFlowAI Engine
 
-3-Lane-Endlessrunner mit **vertikalem Scrolling**. Hindernisse kommen von oben,
-du wechselst die Lane, um auszuweichen. Gleiche Kernmechanik wie beim Dino:
-**kein Game-Over** – bei Kontakt zählt ein **Treffer-Counter** hoch und die
-**Geschwindigkeit sinkt** (mit Untergrenze). Zusätzlich sammelst du **Coins**.
+A 3-lane, vertical-scroll endless runner (Godot 4.7, GDScript) with a real-time
+cognitive-load estimator and adaptive-difficulty layer built on top of it.
+Same no-fail core as a Dino-style runner — obstacles come from above, you
+switch lanes to dodge, a hit slows you down rather than ending the run — but
+instead of a flat difficulty curve, the game reads *how* you're playing
+(swipe dynamics, reaction latency, hesitation, error rate) and keeps you in a
+flow state while teaching real content (currently Cognitive Load Theory,
+through the game that's measuring it).
+
+For the deeper technical/scientific writeup (architecture, current model
+status, path to a trained model, privacy posture), see
+[`docs/TECHNICAL_BRIEF.md`](docs/TECHNICAL_BRIEF.md). For a running,
+commit-by-commit build log, see [`docs/MVP_SPEC.md`](docs/MVP_SPEC.md).
 
 ## Setup
-1. Ordner anlegen, alle Dateien hineinkopieren.
-2. Godot → **Import** → `project.godot` → öffnen → F5.
-3. Keine externen Assets nötig (alles per `_draw()`).
 
-## Steuerung
-- **A / D** oder **← / →** = Lane wechseln
-- **Swipe links/rechts** (Touch) = Lane wechseln
-- **Maus-Drag** links/rechts = Swipe-Ersatz am Desktop
+1. Clone the repo.
+2. Open Godot **4.7**, choose **Import**, select `project.godot`.
+3. Press **F5** to run. No external assets needed — everything is drawn with
+   `_draw()` or built from Godot's built-in `Theme` system.
 
-## Dateien
-- `project.godot` – Konfig (Portrait 540×960)
-- `main.tscn` / `main.gd`         – Lanes, Scrolling, Spawner, Score/Coins/Treffer
-- `player.tscn` / `player.gd`     – Läufer: Lane-Wechsel (Tasten + Swipe) + Slide
-- `obstacle.tscn` / `obstacle.gd` – Hindernis (Area2D, Kollision ohne Stopp)
-- `coin.tscn` / `coin.gd`         – Münze (Area2D, einsammelbar)
+## Controls
 
-## Stellschrauben (`main.gd`)
-| Konstante     | Wirkung                                  |
-|---------------|------------------------------------------|
-| `LANE_COUNT`  | Anzahl Lanes (Standard 3)                |
-| `HIT_FACTOR`  | Bremsstärke pro Treffer                  |
-| `MIN_SPEED`   | Untergrenze – stoppt nie                 |
-| `SPEED_GAIN`  | Beschleunigung über Zeit                 |
-| `MAX_SPEED`   | Tempo-Obergrenze                         |
-| `OB_PRESETS`  | Größen der Hindernisse                   |
+- **A / D** or **← / →** — switch lane
+- **Swipe left/right** (touch) — switch lane
+- **Mouse drag** left/right — swipe substitute on desktop
 
-Slide-Tempo beim Lane-Wechsel: `SLIDE_SPEED` in `player.gd`.
-Swipe-Empfindlichkeit: `SWIPE_MIN` in `player.gd`.
+## What's actually running
 
-## Technik-Notizen
-- Kollision läuft über `Area2D`: nur der Spieler ist `monitorable`, Hindernisse
-  und Coins `monitoring` mit `collision_mask = 1`. Dadurch erkennen sie den
-  Spieler, aber nicht sich gegenseitig.
-- Beim Spawnen werden nie alle 3 Lanes blockiert (max. 2), es bleibt immer eine
-  freie Lane – das Spiel ist also immer lösbar.
-- Alle scrollenden Objekte liegen in der Gruppe `scroll` und werden zentral
-  bewegt/aufgeräumt.
+- Telemetry (lane switches, swipes, reaction latency, hesitation) feeds a
+  rolling 6-second feature window, fused into a `{state, load, confidence}`
+  reading roughly every 150ms, personalized against your own rolling
+  baseline (not a fixed global threshold).
+- That reading drives live difficulty (speed, spawn density, hints) and
+  gates a periodic paused overlay with Cognitive Load Theory questions,
+  scaffolded (hints, answer elimination) by how loaded you currently are.
+- A small "Check-in" button in the run HUD opens an optional, manual
+  self-report (lightweight NASA-TLX) — never on a timer, only when you tap
+  it — used to build real ground-truth labels for a future trained model.
+- Session logging (the full behavioral stream) is opt-in, off by default,
+  anonymous, and on-device only — see Settings in the main menu.
+
+The estimator and adaptation policy are documented v1 heuristics behind
+swappable interfaces (`ICognitiveLoadModel`, `IAdaptationPolicy`), not a
+trained model yet — `docs/TECHNICAL_BRIEF.md` §4–5 is explicit about this.
+
+## Project structure
+
+```
+affective/   Game-agnostic engine: telemetry, feature extraction, the
+             estimator (models/), the adaptation policy (policy/), the
+             per-user baseline, session logging, optional pilot upload.
+             Talks to game/ only through the AffectiveEngine autoload.
+game/        The runner itself: main scene/loop, player, obstacles, coins.
+ui/          Main menu, Settings, Debug HUD (F3), pause menu, the question
+             and self-report overlays, the app-wide Theme.
+editor/      In-app content editor for authoring question packs.
+content/     Bundled question packs (JSON).
+docs/        TECHNICAL_BRIEF.md (external-facing) and MVP_SPEC.md (build log).
+```
+
+## Tuning knobs (`game/main.gd`)
+
+| Constant | Effect |
+|---|---|
+| `LANE_COUNT` | Number of lanes (default 3) |
+| `HIT_FACTOR` | Speed penalty on a hit |
+| `MIN_SPEED` | Floor — the run never fully stops |
+| `SPEED_GAIN` | Natural acceleration over time |
+| `MAX_SPEED` | Speed ceiling |
+| `OB_PRESETS` | Obstacle sizes |
+
+Lane-switch slide speed: `SLIDE_SPEED` in `game/player.gd`.
+Swipe sensitivity: `SWIPE_MIN` in `game/player.gd`.
+Question-overlay interval and obstacle toggle: Settings, in-game.
+
+## Technical notes
+
+- Collision uses `Area2D`: only the player is `monitorable`, obstacles and
+  coins are `monitoring` with `collision_mask = 1` — so they detect the
+  player but never each other.
+- Obstacle spawns never block all lanes at once (max. 2 of 3) — at least
+  one lane is always open, so the run is always solvable.
+- Everything scrolling belongs to the `scroll` group and is moved/cleaned
+  up centrally in `main.gd`.
+- No threads anywhere (the Web export preset has `thread_support=false`);
+  the estimator ticks on a plain `Timer`, not a per-frame accumulator.
+
+## Deployment
+
+Pushes to `main` build a Web export and deploy it to GitHub Pages via
+`.github/workflows/deploy.yml` (also runnable manually from the Actions
+tab, or `gh workflow run deploy.yml`).
