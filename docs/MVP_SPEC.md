@@ -358,3 +358,20 @@ forced on and zero input, `idle_ratio = 1.0` once real decision zones opened
 and closed unanswered - confirming the signal now tracks genuine missed
 opportunities instead of ordinary silence. Clean import/export/runtime.
 Branched fresh off `main`.
+
+## feature/design-reference-pages branch (from main): self-host the design reference on GitHub Pages
+The Claude Artifact design reference (palette/type/screen mockups, see
+`docs/TECHNICAL_BRIEF.md`) is private by default with no programmatic way to
+make it public - user asked whether it could instead live on the project's
+existing GitHub Pages deployment. It can: `docs/design-reference/index.html`
+is a standalone copy of that same page (proper `<!doctype html><head>/<body>`
+wrapper added around the artifact's fragment content - identical CSS/canvas
+waveform/mockups, no functional changes), and `.github/workflows/deploy.yml`
+gained one step, "Design-Referenz mitkopieren", that copies it into
+`build/web/design-reference/index.html` right after the Godot Web export and
+before the Pages upload step - so it deploys alongside the game, not instead
+of it, at `<pages-url>/design-reference/`. No changes to the Godot project
+itself. Verified the file is well-formed (balanced `<style>`/`<script>` tags)
+and that the workflow step sits after the export and before
+`upload-pages-artifact`; the actual Pages deploy can only be confirmed once
+this branch is merged to `main` and Actions runs. Branched fresh off `main`.
