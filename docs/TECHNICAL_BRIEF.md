@@ -1,6 +1,6 @@
 # AffectiveFlowAI Engine — Technical Brief
 
-*Last updated: 2026-07-15. This document is kept current as the system evolves — treat it as the canonical external-facing technical description, distinct from `docs/MVP_SPEC.md` (the internal commit-by-commit build log).*
+*Last updated: 2026-07-15 (corrected §1/§7 network-calls claim after the optional pilot-upload path was added). This document is kept current as the system evolves — treat it as the canonical external-facing technical description, distinct from `docs/MVP_SPEC.md` (the internal commit-by-commit build log).*
 
 **Visual identity reference:** https://claude.ai/code/artifact/e10daf25-67b5-43b7-b762-8fc7f30dc604 — palette, type, and screen mockups derived from the product's own signal (the live tri-state load chart) and existing in-game colors. A design reference page, not a `.fig` file; intended as direct creative direction for a designer, or as the spec to rebuild from in Figma. Now public. It's also being self-hosted on the project's own GitHub Pages deployment (`<pages-url>/design-reference/`, branch `feature/design-reference-pages`, not yet merged) so it doesn't depend on the artifact link staying reachable — see §11.
 
@@ -8,7 +8,7 @@
 
 AffectiveFlowAI Engine is a real-time cognitive-load estimation and adaptive-difficulty layer, built on top of a lane-runner game (Godot 4.7, Web-exportable, mobile-portable). It reads *how* a learner interacts — swipe dynamics, reaction latency, hesitation, error patterns — and uses that to keep them in a flow state while delivering real educational content (currently Cognitive Load Theory itself, taught through the game that's measuring it).
 
-Everything runs **entirely on-device**. There is no server, no account system, no network call anywhere in the codebase, no camera/microphone/biometric hardware. This is a hard architectural constraint, not a policy promise layered on top.
+Everything runs **entirely on-device by default**. Out of the box there is no server, no account system, no network call anywhere the game runs, no camera/microphone/biometric hardware. *Correction from an earlier version of this doc, which stated this as an unconditional codebase-wide constraint: as of `feature/self-report-mode`, there is one narrow, explicit exception — see §7.*
 
 ## 2. The core loop
 
@@ -53,7 +53,7 @@ The architecture was deliberately built with this transition in mind — it is a
 
 **Concrete next steps to get from heuristic to trained model:**
 
-1. Run a small structured pilot (10–30 people) with periodic self-report prompts (NASA-TLX or a lighter-weight equivalent) during play, to get real ground-truth labels alongside the behavioral telemetry.
+1. Run a small structured pilot (10–30 people) with self-report check-ins (a lightweight, 1–9-scale NASA-TLX — Mental/Physical/Temporal Demand, Performance, Effort, Frustration) during play, to get real ground-truth labels alongside the behavioral telemetry. **Built** (`feature/self-report-mode`): a small manual "Check-in" button in the run HUD, not a periodic auto-prompt — the player decides when to rate, so it never interrupts play uninvited.
 2. Train a small model offline (logistic regression, a shallow MLP, or gradient-boosted trees are all plenty for 8 input features — no need for anything heavier).
 3. Validate against held-out sessions and report a real correlation number against the self-report instrument.
 4. Export just the learned weights (a small array of floats) and implement inference as plain matrix multiplication in GDScript — no ML runtime, no native plugin, no per-platform build complexity. This keeps everything on-device by construction and works identically across desktop, Web, and mobile exports.
@@ -70,11 +70,13 @@ A heavier on-device runtime (ONNX Runtime Mobile, TensorFlow Lite via a native G
 
 ## 7. Data & privacy posture
 
-- No network calls anywhere in the codebase. No accounts. No server.
-- No camera, microphone, or biometric hardware — ever.
-- Session logging is **opt-in, default off**, uses an anonymous random UUID never tied to identity, and stores data only in the app's local on-device storage.
+- **Default build: no network calls, no accounts, no server.** No camera, microphone, or biometric hardware — ever, in any configuration.
+- Session logging (the full behavioral telemetry stream) is **opt-in, default off**, uses an anonymous random UUID never tied to identity, and stores data only in the app's local on-device storage (`user://`). This is unconditional — there is no code path that sends the tick log anywhere.
 - Users can export or permanently delete all logged sessions from Settings at any time.
 - "Idle" in the feature set specifically means *ignored a real in-game decision*, not generic silence — a deliberate fix to avoid mislabeling ordinary quiet play as disengagement.
+- **The one exception, added in `feature/self-report-mode`:** an optional, researcher-configured pilot-study upload. It is off and unconfigured in every build until a researcher manually enters a Supabase project URL + key in Settings and turns it on — there is no default endpoint baked in. When active, it uploads **only self-report check-in ratings** (the values the player explicitly typed in and submitted), each paired with the estimator's own state/load/confidence/feature reading at that moment, plus a persistent-but-anonymous per-install id (unrelated to any identity, exists only to let a researcher group one participant's check-ins together). It never uploads the continuous tick log — that stays exactly as on-device-only as described above. Practically: this is a pilot-testing tool for a small, explicitly recruited group of participants, not something that activates for the general public build.
+
+Net effect: the general-release build's privacy posture is unchanged from earlier versions of this document. The exception exists to make the §5 pilot study logistically possible, and is scoped as narrowly as the actual research need (a handful of self-reported ratings per session, not raw behavioral data).
 
 ## 8. Why this is defensible (the honest version)
 
@@ -102,6 +104,8 @@ A cloned formula with no accumulated personalization data behind it is an untune
 | Adaptive difficulty / scaffolding | Live |
 | Educational content (Cognitive Load Theory) | Live, paused question overlay, flow-state-scaffolded |
 | Opt-in on-device data logging | Live |
+| Self-report check-in (pilot labels) | Live — manual button, `feature/self-report-mode`, not yet merged |
+| Optional pilot-study upload (Supabase) | Live but unconfigured by default — same branch; needs a researcher-provided project, see §7 |
 | Trained on-device ML model | Not started — data pipeline ready, needs a labelled pilot (§5) |
 | Visual/UI design pass | In progress — `ui/app_theme.gd` Theme system live (branch `feature/visual-identity-theme`, not yet merged); reference doc self-hosting in progress — see §11 |
 
