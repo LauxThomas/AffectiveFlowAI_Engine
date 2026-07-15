@@ -62,7 +62,14 @@ func _process(_delta: float) -> void:
 
 func _on_state_changed(new_state: AffectiveTypes.CognitiveState) -> void:
 	state_label.text = AffectiveTypes.state_name(new_state)
-	state_label.add_theme_color_override("font_color", AffectiveTypes.STATE_COLOR[new_state] as Color)
+	var state_color: Color = AffectiveTypes.STATE_COLOR[new_state] as Color
+	state_label.add_theme_color_override("font_color", state_color)
+	# Mirrors the load chart's own per-state coloring instead of the theme's
+	# generic gold fill - the meter and the chart should read as one signal.
+	var fill_style := StyleBoxFlat.new()
+	fill_style.bg_color = state_color
+	fill_style.set_corner_radius_all(3)
+	load_meter.add_theme_stylebox_override("fill", fill_style)
 
 func _on_params_changed(new_params: AdaptationParams) -> void:
 	params_label.text = new_params.to_debug_string()

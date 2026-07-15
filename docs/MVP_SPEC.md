@@ -358,3 +358,46 @@ forced on and zero input, `idle_ratio = 1.0` once real decision zones opened
 and closed unanswered - confirming the signal now tracks genuine missed
 opportunities instead of ordinary silence. Clean import/export/runtime.
 Branched fresh off `main`.
+
+## feature/visual-identity-theme branch (from main): project-wide visual pass, no art assets needed
+Following the visual identity reference (see docs/TECHNICAL_BRIEF.md), applied
+everything achievable through Godot's Theme system alone - no custom sprite
+art, icons, or fonts, since none of those exist yet without a designer.
+
+- New `ui/app_theme.gd` (`AppTheme.build() -> Theme`): defines the palette as
+  named constants (ink/paper grounds, gold accent, matching what's already in
+  the game - coins/lane edges were already gold) and styles Button, a
+  "PrimaryButton" type variation (gold, for the one primary action per
+  screen), PanelContainer, ProgressBar, LineEdit, and base font colors via
+  StyleBoxFlat resources built in code (no hand-written `.tres`, less
+  fragile, easier to verify).
+- New `ui/theme_bootstrap.gd` (autoload `ThemeBootstrap`, registered first):
+  applies the theme to `get_tree().root.theme` once at startup - every scene
+  picks it up automatically, no per-scene wiring.
+- `PrimaryButton` applied to the one primary action per screen: main menu's
+  Play, pause menu's Resume, content editor's Save Pack.
+- `main.gd`'s procedural `_draw()` (asphalt, lane edges, dashed dividers) now
+  references `AppTheme` constants instead of ad hoc hex literals - same
+  gold as before, asphalt shifted to the new ink tone.
+- `debug_hud.gd`'s load meter now recolors its fill by the current cognitive
+  state (matching the load chart's own per-state coloring) instead of a
+  generic theme color.
+- `question_overlay.gd`'s scaffold highlight changed from a plain green
+  color wash (`.modulate`) to a gold-bordered `StyleBoxFlat` override -
+  deliberately not the FLOW-state green, since a scaffolded answer means
+  "emphasized," not "you're in flow," and reusing that green risked the two
+  reading as the same signal. Buttons are reused across questions, so the
+  override is explicitly cleared on non-highlighted buttons each time.
+- `project.godot`'s clear color updated to match the new ink tone.
+
+Verified end-to-end: triggered the question overlay at hint_level 2
+(scaffold styling + answer elimination) and confirmed it resolves and
+unpauses correctly; simulated ESC to confirm the pause menu (with the new
+PrimaryButton Resume button) opens and closes correctly; loaded the main
+menu, game, and content editor scenes headlessly with zero errors or
+warnings. Can't visually inspect pixel rendering in headless mode, so this
+confirms the theme applies and every touched code path runs without error,
+not final visual approval - a real look-and-feel review still needs the
+actual editor or exported build. Real sprite art, icons, and typography
+still need an actual designer; this only closes the "looks unstyled" gap
+that pure Theme work can reach.

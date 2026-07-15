@@ -281,11 +281,15 @@ func _update_ui() -> void:
 	state_label.add_theme_color_override("font_color", AffectiveTypes.STATE_COLOR[state] as Color)
 
 # ─── Straße zeichnen ───────────────────────────────────────
+# Colors match the project-wide identity (ui/app_theme.gd): AppTheme.INK_2
+# for the asphalt (slightly lighter than pure UI black, keeps the game
+# world visually distinct from UI chrome) and AppTheme.GOLD for the edges,
+# already what this drew before the identity pass formalized it.
 func _draw() -> void:
 	var vp := get_viewport_rect().size
-	draw_rect(Rect2(Vector2.ZERO, vp), Color("343841"))          # Asphalt
-	draw_rect(Rect2(0, 0, 6, vp.y), Color("f0c419"))             # Rand links
-	draw_rect(Rect2(vp.x - 6, 0, 6, vp.y), Color("f0c419"))      # Rand rechts
+	draw_rect(Rect2(Vector2.ZERO, vp), AppTheme.INK_2)               # Asphalt
+	draw_rect(Rect2(0, 0, 6, vp.y), AppTheme.GOLD)                   # Rand links
+	draw_rect(Rect2(vp.x - 6, 0, 6, vp.y), AppTheme.GOLD)            # Rand rechts
 
 	# gestrichelte Lane-Trenner, nach unten scrollend
 	var period := 74.0
@@ -294,5 +298,5 @@ func _draw() -> void:
 		var line_x := vp.x * float(d) / float(LANE_COUNT)
 		var y := -period + off
 		while y < vp.y:
-			draw_rect(Rect2(line_x - 3.0, y, 6.0, 44.0), Color("cfd3da"))
+			draw_rect(Rect2(line_x - 3.0, y, 6.0, 44.0), AppTheme.PAPER)
 			y += period
