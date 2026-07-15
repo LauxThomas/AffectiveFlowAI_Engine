@@ -110,6 +110,12 @@ func is_logging_enabled() -> bool:
 func debug_logged_ticks() -> int:
 	return _logger.ticks_logged()
 
+# Self-report ratings are paired with the estimator's own current reading,
+# not a fresh recompute - the player is rating how the last stretch of play
+# felt, and _last_* is that same stretch's live output already on hand.
+func log_self_report(ratings: Dictionary) -> void:
+	_logger.log_self_report(ratings, _current_state, _last_load, _last_confidence, _last_features)
+
 func _on_tick() -> void:
 	var new_events: Array[Dictionary] = _telemetry.events_since(_last_tick_usec)
 	_window.push_events(new_events)
