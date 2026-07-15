@@ -458,3 +458,35 @@ confirmed default state is unconfigured/disabled, confirmed
 a non-existent Supabase project doesn't throw or block (fire-and-forget, as
 designed) - then reset the local config back to empty so no test state was
 left in `user://`.
+
+## Same branch: baked in this project's actual Supabase URL/key as defaults
+User provided the real pilot Supabase project's URL and anon key and asked
+to have them baked into the code so no manual Settings entry is needed.
+`DEFAULT_URL`/`DEFAULT_ANON_KEY` consts added to `pilot_upload_service.gd`
+(`https://ivkxtgqvgabephdfsalc.supabase.co`, the actual API host - not the
+`supabase.com/dashboard/...` URL the user first pasted, which is the human
+dashboard, not the REST endpoint; corrected before use). The anon key is a
+new-format `sb_publishable_...` key, which Supabase's own naming says is
+meant to be public/client-embedded - safe here specifically because the
+`pilot_sessions` table's RLS policy is insert-only for `anon` (no read/
+update/delete), per docs/TECHNICAL_BRIEF.md §7.
+
+`_load_config()` now only overrides a default field if the saved
+`user://pilot_config.json` has a non-empty value for it, so a
+never-configured install still gets the baked-in project, while an
+explicitly saved different project (or a blanked-out one) still wins.
+**`_enabled` still defaults to `false`** - baked-in URL/key make the service
+*configured*, not *uploading*; the Settings checkbox is still the only thing
+that starts real uploads. This was a deliberate choice, not an oversight:
+kept the same explicit-opt-in shape as the rest of the logging pipeline
+rather than silently starting uploads for anyone who plays a build with
+these defaults compiled in.
+
+Verified via a temporary headless `-s` script: confirmed `get_url()`/
+`get_anon_key()` return the baked-in values, `is_configured()` is true, and
+`is_enabled()` is false on a fresh install with no saved config - and,
+because `is_enabled()` gates the actual `HTTPRequest.request()` call,
+deliberately did NOT fire a live request against the real project during
+this automated check (no table/RLS policy confirmed present yet, and
+inserting test rows into someone else's real database without asking felt
+like the wrong default). Clean headless import and Web export.

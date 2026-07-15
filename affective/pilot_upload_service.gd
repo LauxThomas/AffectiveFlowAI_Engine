@@ -14,9 +14,20 @@ extends Node
 const CONFIG_PATH := "user://pilot_config.json"
 const TABLE_PATH := "/rest/v1/pilot_sessions"
 
+# Baked-in defaults for this project's own pilot Supabase instance, so
+# testers don't have to type these in by hand. This is a "publishable" key
+# by Supabase's own naming (sb_publishable_...), explicitly meant to be
+# shipped client-side - it's safe here only because the `pilot_sessions`
+# table's Row Level Security policy grants `anon` insert-only, never
+# select/update/delete (see docs/TECHNICAL_BRIEF.md §7). Still requires the
+# Settings checkbox to be turned on - baked-in config alone doesn't start
+# uploading anything.
+const DEFAULT_URL := "https://ivkxtgqvgabephdfsalc.supabase.co"
+const DEFAULT_ANON_KEY := "sb_publishable_RgUhWgWXC5y_s7BLhf7z8w_szkIcoIM"
+
 var _http: HTTPRequest
-var _url: String = ""
-var _anon_key: String = ""
+var _url: String = DEFAULT_URL
+var _anon_key: String = DEFAULT_ANON_KEY
 var _enabled: bool = false
 var _participant_id: String = ""
 
@@ -24,7 +35,7 @@ func _ready() -> void:
 	_http = HTTPRequest.new()
 	add_child(_http)
 	_participant_id = _load_or_create_participant_id()
-	_load_config()
+	_load_config()   # a saved user:// config (e.g. pointed at a different project) still wins over the baked-in default
 
 func set_config(url: String, anon_key: String) -> void:
 	_url = url.strip_edges()
@@ -113,6 +124,13 @@ func _load_config() -> void:
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return
 	var config := parsed as Dictionary
-	_url = String(config.get("url", ""))
-	_anon_key = String(config.get("anon_key", ""))
+	# Empty saved values fall back to the baked-in default rather than
+	# clearing it - only a genuinely different, explicitly-saved URL/key
+	# should override the default.
+	var saved_url := String(config.get("url", ""))
+	var saved_key := String(config.get("anon_key", ""))
+	if not saved_url.is_empty():
+		_url = saved_url
+	if not saved_key.is_empty():
+		_anon_key = saved_key
 	_enabled = bool(config.get("enabled", false))
