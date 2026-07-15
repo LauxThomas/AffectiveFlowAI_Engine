@@ -1,8 +1,8 @@
 # AffectiveFlowAI Engine — Technical Brief
 
-*Last updated: 2026-07-14. This document is kept current as the system evolves — treat it as the canonical external-facing technical description, distinct from `docs/MVP_SPEC.md` (the internal commit-by-commit build log).*
+*Last updated: 2026-07-15. This document is kept current as the system evolves — treat it as the canonical external-facing technical description, distinct from `docs/MVP_SPEC.md` (the internal commit-by-commit build log).*
 
-**Visual identity reference:** https://claude.ai/code/artifact/e10daf25-67b5-43b7-b762-8fc7f30dc604 — palette, type, and screen mockups derived from the product's own signal (the live tri-state load chart) and existing in-game colors. A design reference page, not a `.fig` file; intended as direct creative direction for a designer, or as the spec to rebuild from in Figma. *Currently private — see note in §11.*
+**Visual identity reference:** https://claude.ai/code/artifact/e10daf25-67b5-43b7-b762-8fc7f30dc604 — palette, type, and screen mockups derived from the product's own signal (the live tri-state load chart) and existing in-game colors. A design reference page, not a `.fig` file; intended as direct creative direction for a designer, or as the spec to rebuild from in Figma. Now public. It's also being self-hosted on the project's own GitHub Pages deployment (`<pages-url>/design-reference/`, branch `feature/design-reference-pages`, not yet merged) so it doesn't depend on the artifact link staying reachable — see §11.
 
 ## 1. What it is
 
@@ -103,8 +103,10 @@ A cloned formula with no accumulated personalization data behind it is an untune
 | Educational content (Cognitive Load Theory) | Live, paused question overlay, flow-state-scaffolded |
 | Opt-in on-device data logging | Live |
 | Trained on-device ML model | Not started — data pipeline ready, needs a labelled pilot (§5) |
-| Visual/UI design pass | In progress — see §11 |
+| Visual/UI design pass | In progress — `ui/app_theme.gd` Theme system live (branch `feature/visual-identity-theme`, not yet merged); reference doc self-hosting in progress — see §11 |
 
 ## 11. Visual identity reference — access note
 
-The reference linked at the top of this document is currently **private** by default (Claude Artifacts start private). Making it public/shareable is a one-time manual step, not something that can be done from this repo or by an automated process: open the link, use the page's own share menu, and set it to shared/public. Once that's done the link above works for anyone, including outside collaborators (e.g. a contracted designer).
+The reference is now public at the artifact link above, and is additionally being self-hosted at `<pages-url>/design-reference/` via `docs/design-reference/index.html` and a small addition to `.github/workflows/deploy.yml` (branch `feature/design-reference-pages`) — belt-and-suspenders, since an artifact link's public/private state can always be flipped back by whoever owns it, while a copy in this repo's own Pages deployment is not exposed to that.
+
+Separately, `feature/visual-identity-theme` (also not yet merged) took a first pass at applying this reference's palette directly in the game: a programmatically-built Godot `Theme` resource (`ui/app_theme.gd`, applied project-wide via a `ThemeBootstrap` autoload) recolors buttons, panels, the load meter, and the question-overlay scaffolding using the same ink/gold/state-color palette as the reference doc. It covers what Godot's `Theme` system can do without new art assets — no custom icons, sprites, or fonts — so a real designer pass is still the next step, not a replacement for one.
