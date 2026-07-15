@@ -14,7 +14,6 @@ class_name QuestionOverlay
 signal answer_chosen(correct: bool, question_id: String, time_to_answer_ms: float)
 
 const FEEDBACK_DELAY_SEC := 1.2
-const SCAFFOLD_HIGHLIGHT := Color(0.75, 1.0, 0.82)
 
 @onready var panel: PanelContainer = $Panel
 @onready var question_label: Label = $Panel/VBoxContainer/QuestionLabel
@@ -70,12 +69,35 @@ func show_question(item: Dictionary, hint_level: int) -> void:
 			btn.visible = true
 			btn.disabled = false
 			btn.text = String(answers[indices[i]])
-			btn.modulate = SCAFFOLD_HIGHLIGHT if (hint_level >= 1 and indices[i] == _correct_original_index) else Color.WHITE
+			if hint_level >= 1 and indices[i] == _correct_original_index:
+				_apply_scaffold_style(btn)
+			else:
+				_clear_scaffold_style(btn)
 		else:
 			btn.visible = false
 
 	_start_usec = Time.get_ticks_usec()
 	panel.visible = true
+
+# Gold border, not the FLOW-state green - a scaffolded answer means "this is
+# emphasized," and reusing the state color there would read as "you're in
+# flow" instead. Buttons are reused across questions, so the non-highlighted
+# ones must have this explicitly cleared each time, not just left alone.
+func _apply_scaffold_style(btn: Button) -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = AppTheme.INK_3
+	style.border_color = AppTheme.GOLD
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(4)
+	style.set_content_margin_all(10.0)
+	btn.add_theme_stylebox_override("normal", style)
+	btn.add_theme_stylebox_override("hover", style)
+	btn.add_theme_stylebox_override("focus", style)
+
+func _clear_scaffold_style(btn: Button) -> void:
+	btn.remove_theme_stylebox_override("normal")
+	btn.remove_theme_stylebox_override("hover")
+	btn.remove_theme_stylebox_override("focus")
 
 func _on_answer_pressed(button_index: int) -> void:
 	if _resolved:
