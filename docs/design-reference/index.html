@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AffectiveFlowAI Engine — Visual Identity &amp; Screen Reference</title>
+<meta name="description" content="Design reference: palette, type, and screen mockups for the AffectiveFlowAI Engine, built as a page (not a .fig file) to hand directly to a designer.">
+
+<style>
+  /* ───────────────────────── Tokens ───────────────────────── */
+  :root {
+    --ink:        #121319;
+    --ink-2:      #1b1d26;
+    --ink-3:      #2a2d3a;
+    --paper:      #eceef1;
+    --paper-2:    #dfe2e7;
+    --paper-3:    #c7cbd3;
+    --gold:       #f0c419;
+    --gold-ink:   #4a3900;
+    --boredom:    #4a90d9;
+    --flow:       #4ad991;
+    --overwhelm:  #d94a90;
+
+    --bg:         var(--paper);
+    --bg-panel:   #ffffff;
+    --bg-sunken:  var(--paper-2);
+    --text:       #14161c;
+    --text-dim:   #5c616d;
+    --border:     var(--paper-3);
+    --grid-line:  rgba(20, 22, 28, 0.05);
+    --hero-line-glow: rgba(240, 196, 25, 0.18);
+
+    --font-display: "Bahnschrift", "Roboto Condensed", "Oswald", "Arial Narrow", sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+
+    --fs-xs: 0.72rem;
+    --fs-sm: 0.85rem;
+    --fs-base: 1rem;
+    --fs-md: 1.2rem;
+    --fs-lg: 1.55rem;
+    --fs-xl: 2.05rem;
+    --fs-2xl: 2.9rem;
+    --fs-3xl: 4.1rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: var(--ink);
+      --bg-panel: var(--ink-2);
+      --bg-sunken: #0b0c10;
+      --text: var(--paper);
+      --text-dim: #9298a8;
+      --border: var(--ink-3);
+      --grid-line: rgba(236, 238, 241, 0.05);
+      --hero-line-glow: rgba(240, 196, 25, 0.25);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: var(--ink);
+    --bg-panel: var(--ink-2);
+    --bg-sunken: #0b0c10;
+    --text: var(--paper);
+    --text-dim: #9298a8;
+    --border: var(--ink-3);
+    --grid-line: rgba(236, 238, 241, 0.05);
+    --hero-line-glow: rgba(240, 196, 25, 0.25);
+  }
+  :root[data-theme="light"] {
+    --bg: var(--paper);
+    --bg-panel: #ffffff;
+    --bg-sunken: var(--paper-2);
+    --text: #14161c;
+    --text-dim: #5c616d;
+    --border: var(--paper-3);
+    --grid-line: rgba(20, 22, 28, 0.05);
+    --hero-line-glow: rgba(240, 196, 25, 0.18);
+  }
+
+  /* ───────────────────────── Reset / base ───────────────────────── */
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: var(--fs-base);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  body {
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+  p { margin: 0; }
+  button { font-family: inherit; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  ::selection { background: var(--gold); color: var(--gold-ink); }
+
+  .label {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 clamp(20px, 5vw, 56px) 96px;
+  }
+
+  /* ───────────────────────── Masthead ───────────────────────── */
+  .masthead {
+    padding: 40px 0 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .masthead-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 22px;
+  }
+  .masthead-meta .label span + span::before { content: "  ·  "; opacity: 0.5; }
+  .masthead h1 {
+    font-size: var(--fs-3xl);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 0.98;
+    text-transform: uppercase;
+  }
+  .masthead h1 em {
+    font-style: normal;
+    color: var(--gold);
+  }
+  .masthead-sub {
+    display: flex;
+    gap: 40px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+  .masthead-sub p:first-child {
+    max-width: 46ch;
+    font-size: var(--fs-md);
+    color: var(--text-dim);
+  }
+  .masthead-note {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+    max-width: 34ch;
+    border-left: 2px solid var(--gold);
+    padding-left: 12px;
+    align-self: center;
+  }
+
+  /* ───────────────────────── Hero waveform ───────────────────────── */
+  .hero {
+    position: relative;
+    margin-top: 36px;
+    border: 1px solid var(--border);
+    background: var(--bg-sunken);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .hero-frame {
+    position: relative;
+    height: min(46vh, 380px);
+  }
+  .hero-frame canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .hero-corner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-color: var(--gold);
+    opacity: 0.7;
+  }
+  .hero-corner.tl { top: 10px; left: 10px; border-top: 2px solid; border-left: 2px solid; }
+  .hero-corner.tr { top: 10px; right: 10px; border-top: 2px solid; border-right: 2px solid; }
+  .hero-corner.bl { bottom: 10px; left: 10px; border-bottom: 2px solid; border-left: 2px solid; }
+  .hero-corner.br { bottom: 10px; right: 10px; border-bottom: 2px solid; border-right: 2px solid; }
+  .hero-channels {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ch {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--ch-color) 16%, transparent);
+    color: var(--ch-color);
+    border: 1px solid color-mix(in srgb, var(--ch-color) 45%, transparent);
+    width: fit-content;
+  }
+  .ch-overwhelm { --ch-color: var(--overwhelm); }
+  .ch-flow { --ch-color: var(--flow); }
+  .ch-boredom { --ch-color: var(--boredom); }
+  .hero-caption {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ───────────────────────── Section headers ───────────────────────── */
+  .section {
+    margin-top: 64px;
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .section-head .index {
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    color: var(--gold);
+  }
+  .section-head h2 {
+    font-size: var(--fs-xl);
+    text-transform: uppercase;
+    letter-spacing: -0.005em;
+  }
+  .section-head .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ───────────────────────── Calibration card ───────────────────────── */
+  .cal-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr 0.8fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+  .cal-block {
+    background: var(--bg-panel);
+    padding: 24px;
+  }
+  .cal-block h3 {
+    font-size: var(--fs-sm);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 18px;
+  }
+  .swatch-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-top: 1px dashed var(--border);
+  }
+  .swatch-row:first-of-type { border-top: none; }
+  .swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.12);
+  }
+  .swatch-meta { display: flex; flex-direction: column; gap: 1px; }
+  .swatch-name { font-size: var(--fs-sm); font-weight: 600; }
+  .swatch-hex { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); }
+
+  .type-sample { padding: 9px 0; border-top: 1px dashed var(--border); }
+  .type-sample:first-of-type { border-top: none; }
+  .type-sample .label { display: block; margin-bottom: 4px; }
+  .type-sample .demo-display { font-family: var(--font-display); font-size: var(--fs-md); text-transform: uppercase; letter-spacing: 0.02em; }
+  .type-sample .demo-body { font-family: var(--font-body); font-size: var(--fs-base); }
+  .type-sample .demo-mono { font-family: var(--font-mono); font-size: var(--fs-sm); }
+
+  .layout-notes p { font-size: var(--fs-sm); color: var(--text-dim); padding: 9px 0; border-top: 1px dashed var(--border); }
+  .layout-notes p:first-of-type { border-top: none; }
+  .layout-notes strong { color: var(--text); }
+
+  /* ───────────────────────── Screens grid ───────────────────────── */
+  .screens-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 32px;
+  }
+  figure.device { margin: 0; }
+  .device-frame {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 0 1px 0 var(--border);
+  }
+  .device-screen {
+    position: relative;
+    aspect-ratio: 9 / 16;
+    background: var(--ink);
+    border-radius: 6px;
+    overflow: hidden;
+    font-family: var(--font-body);
+    color: var(--paper);
+  }
+  figcaption {
+    margin-top: 14px;
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+  }
+  .cap-id {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    margin-bottom: 3px;
+  }
+
+  /* menu screen */
+  .menu-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10%; padding: 8%; }
+  .menu-title { font-family: var(--font-display); text-transform: uppercase; font-size: clamp(1.1rem, 8cqw, 2rem); text-align: center; line-height: 0.95; letter-spacing: 0.01em; }
+  .menu-btns { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+  .menu-btn {
+    width: 100%; padding: 11px 6px; border-radius: 3px; border: 1px solid rgba(236,238,241,0.25);
+    background: transparent; color: var(--paper); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+    font-family: var(--font-mono);
+  }
+  .menu-btn.primary { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); font-weight: 700; }
+
+  /* hud screen */
+  .hud-screen { padding: 6% 5%; }
+  .hud-top { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.04em; opacity: 0.85; }
+  .hud-state {
+    margin-top: 8px; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.05em;
+    padding: 3px 7px; border-radius: 2px; width: fit-content;
+    background: color-mix(in srgb, var(--flow) 18%, transparent); color: var(--flow); border: 1px solid color-mix(in srgb, var(--flow) 45%, transparent);
+  }
+  .lanes { position: relative; margin-top: 12%; height: 62%; display: flex; }
+  .lane { flex: 1; border-left: 1px dashed rgba(236,238,241,0.14); }
+  .lane:first-child { border-left: none; }
+  .runner { position: absolute; bottom: 8%; left: 50%; transform: translateX(-50%); width: 15%; aspect-ratio: 1; background: var(--flow); border-radius: 30% 30% 40% 40%; opacity: 0.9; }
+  .obstacle { position: absolute; top: 20%; left: 16%; width: 22%; height: 16%; background: var(--gold); opacity: 0.85; border-radius: 2px; }
+  .coin { position: absolute; top: 42%; right: 20%; width: 8%; aspect-ratio: 1; background: var(--gold); border-radius: 50%; opacity: 0.7; }
+  .beacon { position: absolute; top: 12%; right: 14%; width: 10%; aspect-ratio: 1; border-radius: 50%; background: var(--flow); box-shadow: 0 0 12px 3px color-mix(in srgb, var(--flow) 70%, transparent); }
+
+  /* overlay screen */
+  .overlay-screen { padding: 7%; display: flex; align-items: center; }
+  .overlay-screen::before {
+    content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 30%, rgba(255,255,255,0.04), transparent 60%);
+  }
+  .question-card { position: relative; background: var(--bg-panel); color: var(--text); border-radius: 8px; padding: 14px; width: 100%; border: 1px solid var(--border); }
+  .q-eyebrow { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.1em; color: var(--gold-ink); background: var(--gold); display: inline-block; padding: 2px 6px; border-radius: 2px; margin-bottom: 8px; }
+  .q-text { font-size: 0.78rem; line-height: 1.4; margin-bottom: 10px; }
+  .q-hint { font-family: var(--font-mono); font-size: 0.58rem; color: var(--overwhelm); margin-bottom: 10px; line-height: 1.4; }
+  .q-answer {
+    display: block; width: 100%; text-align: left; padding: 8px 9px; margin-bottom: 6px; border-radius: 4px;
+    border: 1px solid var(--border); background: var(--bg-sunken); color: var(--text); font-size: 0.68rem;
+  }
+  .q-answer.scaffold { border-color: var(--overwhelm); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--overwhelm) 40%, transparent); }
+
+  /* chart screen */
+  .chart-screen { padding: 6% 5%; }
+  .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .state-badge { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.08em; padding: 3px 7px; border-radius: 2px; }
+  .state-badge.overwhelm { background: color-mix(in srgb, var(--overwhelm) 20%, transparent); color: var(--overwhelm); border: 1px solid color-mix(in srgb, var(--overwhelm) 45%, transparent); }
+  .load-readout { font-family: var(--font-mono); font-size: 0.62rem; opacity: 0.8; }
+  .mini-chart-wrap { position: relative; height: 30%; border: 1px solid rgba(236,238,241,0.12); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  .mini-chart-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .feature-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .feature-row span { font-family: var(--font-mono); font-size: 0.52rem; width: 40%; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .feature-track { flex: 1; height: 5px; background: rgba(236,238,241,0.12); border-radius: 3px; overflow: hidden; }
+  .feature-fill { height: 100%; background: var(--overwhelm); }
+
+  /* ───────────────────────── Footer ───────────────────────── */
+  footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+  }
+
+  @media (max-width: 760px) {
+    .cal-grid { grid-template-columns: 1fr; }
+    .masthead h1 { font-size: var(--fs-2xl); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div class="masthead-meta label">
+      <span>DOC AFE — IDENTITY.01</span>
+      <span>REV 2026-07-13 <span>PREPARED FOR INTERNAL + DESIGN HANDOFF</span></span>
+    </div>
+    <h1>AffectiveFlow<em>AI</em> Engine</h1>
+    <div class="masthead-sub">
+      <p>A visual identity for a cognitive-load instrument built into a lane-runner game — reference for the next design pass, drawn from the product's own signal, not invented from scratch.</p>
+      <p class="masthead-note">This is a page, not a .fig file — there's no Figma integration available here. Use it as direct creative direction, or as the spec to rebuild from in Figma.</p>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-frame">
+      <canvas id="waveform" role="img" aria-label="Animated line chart moving between the Overwhelm, Flow, and Boredom bands, representing the live cognitive-load signal"></canvas>
+      <div class="hero-corner tl"></div>
+      <div class="hero-corner tr"></div>
+      <div class="hero-corner bl"></div>
+      <div class="hero-corner br"></div>
+      <div class="hero-channels">
+        <span class="ch ch-overwhelm">CH.3 — OVERWHELM</span>
+        <span class="ch ch-flow">CH.2 — FLOW</span>
+        <span class="ch ch-boredom">CH.1 — BOREDOM</span>
+      </div>
+    </div>
+    <div class="hero-caption">
+      <span>SIGNAL — this is the actual shape of the product: a continuous read of a mind mid-task, not a mascot or a gradient.</span>
+      <span class="tabular">SAMPLE RATE 150ms</span>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="index">01</span>
+      <h2>Calibration</h2>
+      <span class="rule"></span>
+    </div>
+    <div class="cal-grid">
+      <div class="cal-block">
+        <h3>Palette</h3>
+        <div class="swatch-row"><div class="swatch" style="background:var(--gold)"></div><div class="swatch-meta"><span class="swatch-name">Gold — Accent</span><span class="swatch-hex">#F0C419 · lifted from the runner's coins &amp; lane edges</span></div></div>
+        <div class="swatch-row"><div class="swatch" style="background:var(--ink)"></div><div class="swatch-meta"><span class="swatch-name">Graphite — Ground</span><span class="swatch-hex">#121319</span></div></div>
+        <div class="swatch-row"><div class="swatch" style="background:var(--paper)"></div><div class="swatch-meta"><span class="swatch-name">Steel — Ground (light)</span><span class="swatch-hex">#ECEEF1</span></div></div>
+        <div class="swatch-row"><div class="swatch" style="background:var(--boredom)"></div><div class="swatch-meta"><span class="swatch-name">Boredom — Semantic</span><span class="swatch-hex">#4A90D9 · fixed by AffectiveTypes.STATE_COLOR</span></div></div>
+        <div class="swatch-row"><div class="swatch" style="background:var(--flow)"></div><div class="swatch-meta"><span class="swatch-name">Flow — Semantic</span><span class="swatch-hex">#4AD991 · fixed by AffectiveTypes.STATE_COLOR</span></div></div>
+        <div class="swatch-row"><div class="swatch" style="background:var(--overwhelm)"></div><div class="swatch-meta"><span class="swatch-name">Overwhelm — Semantic</span><span class="swatch-hex">#D94A90 · fixed by AffectiveTypes.STATE_COLOR</span></div></div>
+      </div>
+      <div class="cal-block">
+        <h3>Type</h3>
+        <div class="type-sample"><span class="label">Display — headings, uppercase, tracked</span><div class="demo-display">Signal, not decoration</div></div>
+        <div class="type-sample"><span class="label">Body — running copy</span><div class="demo-body">Reads how a mind moves through a task, and adjusts the task in real time.</div></div>
+        <div class="type-sample"><span class="label">Mono — every live number, always tabular</span><div class="demo-mono tabular">LOAD 0.812 · 431 PX/S · 00:47</div></div>
+      </div>
+      <div class="cal-block layout-notes">
+        <h3>Layout</h3>
+        <p><strong>Instrument, not app chrome.</strong> Screens read like calibrated panels — thin borders, mono readouts, no drop shadows.</p>
+        <p><strong>One accent, three signals.</strong> Gold is the only decorative color. Blue/green/magenta never mean "brand" — only state.</p>
+        <p><strong>Grid, not centering.</strong> Left-align text blocks; reserve center alignment for the runner's own 3 lanes.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="index">02</span>
+      <h2>Screen Reference</h2>
+      <span class="rule"></span>
+    </div>
+    <div class="screens-grid">
+
+      <figure class="device">
+        <div class="device-frame">
+          <div class="device-screen menu-screen">
+            <div class="menu-title">Lane<br>Runner</div>
+            <div class="menu-btns">
+              <button class="menu-btn primary">Play</button>
+              <button class="menu-btn">Edit Content</button>
+              <button class="menu-btn">Settings</button>
+            </div>
+          </div>
+        </div>
+        <figcaption><span class="cap-id">01 — Main Menu</span>Gold is reserved for exactly one primary action per screen.</figcaption>
+      </figure>
+
+      <figure class="device">
+        <div class="device-frame">
+          <div class="device-screen hud-screen">
+            <div class="hud-top tabular"><span>SCORE 1,204</span><span>COINS 7</span></div>
+            <div class="hud-state">STATE: FLOW · 612 PX/S</div>
+            <div class="lanes">
+              <div class="lane"></div><div class="lane"></div><div class="lane"></div>
+              <div class="obstacle"></div>
+              <div class="coin"></div>
+              <div class="beacon"></div>
+              <div class="runner"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption><span class="cap-id">02 — Run HUD</span>Flow state replaces a hit counter — always visible, color-coded, never a decoration.</figcaption>
+      </figure>
+
+      <figure class="device">
+        <div class="device-frame">
+          <div class="device-screen overlay-screen">
+            <div class="question-card">
+              <span class="q-eyebrow">Cognitive Load Theory</span>
+              <p class="q-text">Which type of load is caused by how information is presented, and can often be reduced by better instructional design?</p>
+              <p class="q-hint">HINT — Confusing layouts or unnecessary decoration increase this type of load.</p>
+              <button class="q-answer">Intrinsic load</button>
+              <button class="q-answer scaffold">Extraneous load</button>
+              <button class="q-answer">Germane load</button>
+            </div>
+          </div>
+        </div>
+        <figcaption><span class="cap-id">03 — Question Overlay</span>Scaffolding (hint text, the highlighted answer) appears only under sustained overwhelm — not by default.</figcaption>
+      </figure>
+
+      <figure class="device">
+        <div class="device-frame">
+          <div class="device-screen chart-screen">
+            <div class="chart-header">
+              <span class="state-badge overwhelm">OVERWHELM</span>
+              <span class="load-readout tabular">LOAD 0.81</span>
+            </div>
+            <div class="mini-chart-wrap"><canvas id="miniChart"></canvas></div>
+            <div class="feature-row"><span>hesitation_rate</span><div class="feature-track"><div class="feature-fill" style="width:64%"></div></div></div>
+            <div class="feature-row"><span>error_rate</span><div class="feature-track"><div class="feature-fill" style="width:71%"></div></div></div>
+            <div class="feature-row"><span>idle_ratio</span><div class="feature-track"><div class="feature-fill" style="width:22%; background:var(--flow)"></div></div></div>
+          </div>
+        </div>
+        <figcaption><span class="cap-id">04 — Analytics</span>The waveform is the actual signal driving difficulty — this is the "deep tech" screen, not a mock dashboard.</figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <footer>
+    <span>AffectiveFlowAI Engine — identity reference</span>
+    <span>Colors sourced from AffectiveTypes.STATE_COLOR &amp; the runner's existing gold — see docs/TECHNICAL_BRIEF.md</span>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function colorForLoad(load) {
+    if (load > 0.65) return cssVar("--overwhelm");
+    if (load < 0.35) return cssVar("--boredom");
+    return cssVar("--flow");
+  }
+
+  function loadAt(t) {
+    var v = 0.5
+      + 0.30 * Math.sin(t * 0.55)
+      + 0.14 * Math.sin(t * 1.6 + 1.1)
+      + 0.07 * Math.sin(t * 3.3 + 0.6);
+    return Math.max(0, Math.min(1, v));
+  }
+
+  function setupChart(canvas, opts) {
+    var ctx = canvas.getContext("2d");
+    var dpr = Math.max(1, window.devicePixelRatio || 1);
+    var span = opts.span || 8;
+    var offset = opts.offset || 0;
+
+    function resize() {
+      var rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    }
+
+    function draw(tSec) {
+      var w = canvas.width, h = canvas.height;
+      if (!w || !h) return;
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.setLineDash([5 * dpr, 4 * dpr]);
+      ctx.strokeStyle = "rgba(140,140,150,0.35)";
+      ctx.lineWidth = 1 * dpr;
+      [0.35, 0.65].forEach(function (th) {
+        var y = h * (1 - th);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+
+      var steps = opts.steps || 220;
+      ctx.lineWidth = (opts.lineWidth || 2.4) * dpr;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      for (var i = 1; i < steps; i++) {
+        var t0 = tSec + offset - span * (1 - (i - 1) / steps);
+        var t1 = tSec + offset - span * (1 - i / steps);
+        var l0 = loadAt(t0), l1 = loadAt(t1);
+        var x0 = (w * (i - 1)) / steps, x1 = (w * i) / steps;
+        var y0 = h * (1 - l0), y1 = h * (1 - l1);
+        ctx.strokeStyle = colorForLoad(l1);
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+      }
+    }
+
+    resize();
+    window.addEventListener("resize", resize);
+    return draw;
+  }
+
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var heroCanvas = document.getElementById("waveform");
+  var miniCanvas = document.getElementById("miniChart");
+  var drawHero = heroCanvas ? setupChart(heroCanvas, { span: 9, steps: 260 }) : null;
+  var drawMini = miniCanvas ? setupChart(miniCanvas, { span: 6, steps: 90, offset: 3.4, lineWidth: 1.6 }) : null;
+
+  function redrawStatic() {
+    if (drawHero) drawHero(11.5);
+    if (drawMini) drawMini(11.5);
+  }
+
+  if (reduceMotion) {
+    redrawStatic();
+    var mo = new MutationObserver(redrawStatic);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  } else {
+    var start = null;
+    function frame(ts) {
+      if (start === null) start = ts;
+      var tSec = (ts - start) / 1000;
+      if (drawHero) drawHero(tSec);
+      if (drawMini) drawMini(tSec);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+})();
+</script>
+</body>
+</html>

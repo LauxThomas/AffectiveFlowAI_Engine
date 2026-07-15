@@ -164,6 +164,7 @@ layout_mode = 2
 
 [node name="SaveButton" type="Button" parent="Scroll/VBox/ActionButtons"]
 layout_mode = 2
+theme_type_variation = &"PrimaryButton"
 text = "Save Pack"
 
 [node name="PlayTestButton" type="Button" parent="Scroll/VBox/ActionButtons"]

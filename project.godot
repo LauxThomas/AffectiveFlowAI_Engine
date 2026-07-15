@@ -20,6 +20,7 @@ config/features=PackedStringArray("4.7")
 
 [autoload]
 
+ThemeBootstrap="*res://ui/theme_bootstrap.gd"
 AffectiveEngine="*res://affective/affective_engine.gd"
 GameSession="*res://game/game_session.gd"
 PilotUploadService="*res://affective/pilot_upload_service.gd"
@@ -32,4 +33,4 @@ window/stretch/mode="canvas_items"
 
 [rendering]
 
-environment/defaults/default_clear_color=Color(0.203922, 0.219608, 0.254902, 1)
+environment/defaults/default_clear_color=Color(0.070588, 0.07451, 0.098039, 1)

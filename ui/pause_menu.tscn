@@ -23,6 +23,7 @@ text = "Paused"
 [node name="ResumeButton" type="Button" parent="Panel/VBoxContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 48)
+theme_type_variation = &"PrimaryButton"
 text = "Resume"
 
 [node name="MenuButton" type="Button" parent="Panel/VBoxContainer"]
