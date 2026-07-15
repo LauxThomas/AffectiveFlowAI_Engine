@@ -44,7 +44,9 @@ var _question_timer_accum: float = 0.0   # counts up to GameSession.question_int
 @onready var score_label: Label = $UI/ScoreLabel
 @onready var coins_label: Label = $UI/CoinsLabel
 @onready var state_label: Label = $UI/StateLabel
+@onready var self_report_button: Button = $UI/SelfReportButton
 @onready var question_overlay: QuestionOverlay = $QuestionOverlay
+@onready var self_report_overlay: SelfReportOverlay = $SelfReportOverlay
 
 func _ready() -> void:
 	randomize()
@@ -58,8 +60,19 @@ func _ready() -> void:
 	if player.has_signal("lane_switched"):
 		player.lane_switched.connect(_on_player_lane_switched)
 	question_overlay.answer_chosen.connect(_on_overlay_answer_chosen)
+	self_report_button.pressed.connect(_on_self_report_button_pressed)
+	self_report_overlay.finished.connect(_on_self_report_finished)
 	_load_active_pack()
 	_update_ui()
+
+func _on_self_report_button_pressed() -> void:
+	get_tree().paused = true
+	self_report_overlay.show_report()
+
+func _on_self_report_finished(ratings: Variant) -> void:
+	if ratings != null:
+		AffectiveEngine.log_self_report(ratings as Dictionary)
+	get_tree().paused = false
 
 func _load_active_pack() -> void:
 	var forced_id: String = GameSession.consume_forced_pack()

@@ -418,3 +418,135 @@ itself. Verified the file is well-formed (balanced `<style>`/`<script>` tags)
 and that the workflow step sits after the export and before
 `upload-pages-artifact`; the actual Pages deploy can only be confirmed once
 this branch is merged to `main` and Actions runs. Branched fresh off `main`.
+
+## feature/self-report-mode branch (from main): manual NASA-TLX-style check-in
+The technical brief's path to a trained model (§5) names a self-report pilot
+as step 1 - real ground-truth labels to train/validate against, alongside
+the behavioral telemetry. This branch builds the check-in itself, not the
+pilot logistics around it.
+
+- New `ui/self_report_overlay.gd`/`.tscn` (`class_name SelfReportOverlay`,
+  `process_mode ALWAYS`, same paused-overlay pattern as `QuestionOverlay`):
+  a lightweight NASA-TLX (1-9 scale, not the official 21-point form) - 6
+  rows (Mental Demand, Physical Demand, Time Pressure, Performance, Effort,
+  Frustration), each an `HSlider` with low/high anchor labels, built
+  programmatically in `_ready()` from a typed `DIMENSIONS` const rather than
+  hand-placed in the `.tscn`, since the set is fixed and this keeps the
+  scene file small. Submit emits `finished(ratings)`; Skip emits
+  `finished(null)` - one exit path either way, `main.gd` unpauses on both.
+  Sliders reset to a neutral 5 every time it's opened.
+- `main.tscn`'s `UI` layer gained a small, deliberately unobtrusive
+  `SelfReportButton` ("Check-in", bottom-right corner, font size 11,
+  `modulate` alpha 0.55) - manually triggered, not on a timer, since unlike
+  the CLT question overlay this isn't gameplay content and shouldn't
+  interrupt play uninvited. Being a normal child of `UI` (default
+  `process_mode`), it naturally stops receiving input whenever the tree is
+  already paused by the question overlay or pause menu - no extra guard
+  needed for that direction. The reverse direction (ESC while self-report is
+  open) needed one: `pause_menu.gd`'s ESC handler now also checks
+  `SelfReportOverlay.is_showing()`, same pattern as its existing
+  `QuestionOverlay` guard.
+- `SessionLogger.log_self_report()` (new) writes a `"kind": "self_report"`
+  JSONL line - ratings plus the estimator's own `state`/`load`/`confidence`/
+  `features` snapshot at that same moment, so the two can be compared
+  directly. `log_tick()` gained a matching `"kind": "tick"` field so the two
+  line types are unambiguous when parsing a session file. Same file, same
+  opt-in consent gate as regular tick logging - the overlay itself always
+  works (useful as self-reflection even with logging off), only persists if
+  `SessionLogger.is_enabled()`. `AffectiveEngine.log_self_report(ratings)` is
+  the new façade method `main.gd` calls; it forwards the engine's own
+  `_last_state`/`_last_load`/`_last_confidence`/`_last_features` rather than
+  recomputing anything.
+
+Verified via a temporary headless SceneTree test script (`-s` entry point,
+autoloads referenced via `get_node("/root/AffectiveEngine")` since bare
+autoload identifiers aren't resolved for a script that IS the main loop):
+instanced `main.tscn`, forced logging consent on, confirmed all 6 sliders
+build, pressed the check-in button and confirmed the overlay shows and the
+tree pauses, set two slider values, submitted, confirmed the overlay hides
+and the tree unpauses, then read the session file back and confirmed a
+`kind: self_report` line exists with the exact submitted ratings intact.
+Deleted only that one test-created session file (not a blanket
+`delete_all_sessions()` - there's no real accumulated session data on this
+machine yet, confirmed first, but the distinction matters for anyone running
+this test with real data present). Clean headless import and Web export.
+Branched fresh off `main`.
+
+## Same branch: optional pilot-study upload (Supabase) - IMPORTANT: changes the "no network calls" claim
+User asked how to actually get pilot/evaluation data off-device, since
+`SessionLogger` only writes to `user://` (manual Export button is the only
+existing path). Added an opt-in upload path, scoped as narrowly as possible:
+
+- New `affective/pilot_upload_service.gd` (autoload `PilotUploadService`, no
+  `class_name`): holds a Supabase project URL + anon key (entered by the
+  researcher in Settings, persisted to `user://pilot_config.json`, not
+  committed to git - the repo ships with zero credentials in it), and an
+  `enabled` flag. `is_enabled()` requires both a saved config AND the
+  checkbox on - inert otherwise.
+- **Deliberately uploads self-report check-ins only, never the per-150ms
+  tick log.** A check-in is a handful of values the player chose to submit;
+  the full tick stream is continuous behavioral telemetry and stays
+  local-only exactly as before. `AffectiveEngine.log_self_report()` now
+  calls both `_logger.log_self_report()` (existing, local, unchanged) and
+  `PilotUploadService.upload_self_report()` (new, additional, no-ops unless
+  configured+enabled) - the local save was never conditional on the remote
+  one, so a failed/offline upload can't lose the local copy.
+- Upload is a single fire-and-forget `HTTPRequest` POST to
+  `<url>/rest/v1/pilot_sessions`, keyed by a persistent-but-anonymous
+  per-install participant id (`user://pilot_participant_id.txt`, generated
+  once, unrelated to `SessionLogger`'s own per-session UUIDs) so a
+  researcher can correlate one participant's check-ins across multiple play
+  sessions.
+- Settings gained a "Pilot study upload" section: URL/key fields (key field
+  is `secret = true`), a Save button, an upload checkbox, and a status
+  label. Text explicitly says this is for researchers/pilot testers and
+  requires session logging to also be on.
+
+**This measurably changes a claim in `docs/TECHNICAL_BRIEF.md`** ("no
+network calls anywhere in the codebase... a hard architectural constraint").
+That's no longer literally true once this ships - it's now true of the
+*default* configuration, not the codebase unconditionally. The brief needs a
+correction, not just an addition; flagged to the user directly rather than
+silently patched, since this was stated as a hard technical/investor claim.
+
+Verified: headless import and Web export both clean (`PilotUploadService`
+registers as an autoload with no errors). Runtime test (temporary `-s`
+script, same `get_node("/root/...")` pattern as the self-report test):
+confirmed default state is unconfigured/disabled, confirmed
+`set_config()`/`set_enabled()` round-trip through `is_configured()`/
+`is_enabled()`, and confirmed calling `log_self_report()` with a pointed-at
+a non-existent Supabase project doesn't throw or block (fire-and-forget, as
+designed) - then reset the local config back to empty so no test state was
+left in `user://`.
+
+## Same branch: baked in this project's actual Supabase URL/key as defaults
+User provided the real pilot Supabase project's URL and anon key and asked
+to have them baked into the code so no manual Settings entry is needed.
+`DEFAULT_URL`/`DEFAULT_ANON_KEY` consts added to `pilot_upload_service.gd`
+(`https://ivkxtgqvgabephdfsalc.supabase.co`, the actual API host - not the
+`supabase.com/dashboard/...` URL the user first pasted, which is the human
+dashboard, not the REST endpoint; corrected before use). The anon key is a
+new-format `sb_publishable_...` key, which Supabase's own naming says is
+meant to be public/client-embedded - safe here specifically because the
+`pilot_sessions` table's RLS policy is insert-only for `anon` (no read/
+update/delete), per docs/TECHNICAL_BRIEF.md §7.
+
+`_load_config()` now only overrides a default field if the saved
+`user://pilot_config.json` has a non-empty value for it, so a
+never-configured install still gets the baked-in project, while an
+explicitly saved different project (or a blanked-out one) still wins.
+**`_enabled` still defaults to `false`** - baked-in URL/key make the service
+*configured*, not *uploading*; the Settings checkbox is still the only thing
+that starts real uploads. This was a deliberate choice, not an oversight:
+kept the same explicit-opt-in shape as the rest of the logging pipeline
+rather than silently starting uploads for anyone who plays a build with
+these defaults compiled in.
+
+Verified via a temporary headless `-s` script: confirmed `get_url()`/
+`get_anon_key()` return the baked-in values, `is_configured()` is true, and
+`is_enabled()` is false on a fresh install with no saved config - and,
+because `is_enabled()` gates the actual `HTTPRequest.request()` call,
+deliberately did NOT fire a live request against the real project during
+this automated check (no table/RLS policy confirmed present yet, and
+inserting test rows into someone else's real database without asking felt
+like the wrong default). Clean headless import and Web export.

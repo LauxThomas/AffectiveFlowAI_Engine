@@ -37,6 +37,7 @@ func log_tick(
 	if not _enabled or _file == null:
 		return
 	var line: Dictionary = {
+		"kind": "tick",
 		"t": Time.get_ticks_usec(),
 		"features": features,
 		"predicted_state": int(state),
@@ -55,6 +56,32 @@ func log_tick(
 	_file.store_line(JSON.stringify(line))
 	_file.flush()   # Web's IDBFS sync isn't instant on abrupt close - flush each line to reduce (not eliminate) loss risk
 	_ticks_logged += 1
+
+# The real ground-truth label for a future trained model: a NASA-TLX-style
+# self-report (see ui/self_report_overlay.gd), paired with the estimator's
+# own reading at that same moment so the two can be compared/trained against
+# directly. Same file, same consent gate as log_tick - a "kind" field is what
+# tells the two apart when parsing the JSONL later.
+func log_self_report(
+	ratings: Dictionary,
+	state: AffectiveTypes.CognitiveState,
+	load: float,
+	confidence: float,
+	features: Dictionary
+) -> void:
+	if not _enabled or _file == null:
+		return
+	var line: Dictionary = {
+		"kind": "self_report",
+		"t": Time.get_ticks_usec(),
+		"ratings": ratings,
+		"predicted_state": int(state),
+		"load": load,
+		"confidence": confidence,
+		"features": features,
+	}
+	_file.store_line(JSON.stringify(line))
+	_file.flush()
 
 func _start_session() -> void:
 	DirAccess.make_dir_recursive_absolute(SESSIONS_DIR)

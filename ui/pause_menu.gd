@@ -8,6 +8,7 @@ extends CanvasLayer
 @onready var resume_button: Button = $Panel/VBoxContainer/ResumeButton
 @onready var menu_button: Button = $Panel/VBoxContainer/MenuButton
 @onready var _question_overlay: Node = get_node_or_null("../QuestionOverlay")
+@onready var _self_report_overlay: Node = get_node_or_null("../SelfReportOverlay")
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -20,9 +21,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_ESCAPE:
-			# Don't let ESC fight with an active question overlay - it
-			# manages its own pause/resume lifecycle.
+			# Don't let ESC fight with an active question/self-report
+			# overlay - each manages its own pause/resume lifecycle.
 			if _question_overlay != null and _question_overlay.has_method("is_showing") and _question_overlay.is_showing():
+				return
+			if _self_report_overlay != null and _self_report_overlay.has_method("is_showing") and _self_report_overlay.is_showing():
 				return
 			_toggle_pause()
 

@@ -99,6 +99,36 @@ text = "Export Sessions..."
 layout_mode = 2
 text = "Delete All Sessions"
 
+[node name="HSeparator2" type="HSeparator" parent="SettingsPanel/SettingsScroll/SettingsContent"]
+layout_mode = 2
+
+[node name="PilotLabel" type="Label" parent="SettingsPanel/SettingsScroll/SettingsContent"]
+layout_mode = 2
+autowrap_mode = 2
+text = "Pilot study upload (researchers only). If configured below, your Check-In ratings (not full session logs) are also sent to a private research database. Requires session logging above to be enabled too."
+
+[node name="PilotUrlEdit" type="LineEdit" parent="SettingsPanel/SettingsScroll/SettingsContent"]
+layout_mode = 2
+placeholder_text = "Supabase project URL (https://xxxx.supabase.co)"
+
+[node name="PilotKeyEdit" type="LineEdit" parent="SettingsPanel/SettingsScroll/SettingsContent"]
+layout_mode = 2
+placeholder_text = "Supabase anon public key"
+secret = true
+
+[node name="SavePilotConfigButton" type="Button" parent="SettingsPanel/SettingsScroll/SettingsContent"]
+layout_mode = 2
+text = "Save Pilot Config"
+
+[node name="PilotUploadCheck" type="CheckBox" parent="SettingsPanel/SettingsScroll/SettingsContent"]
+layout_mode = 2
+text = "Upload check-ins to pilot study"
+
+[node name="PilotStatusLabel" type="Label" parent="SettingsPanel/SettingsScroll/SettingsContent"]
+layout_mode = 2
+autowrap_mode = 2
+text = "Not configured"
+
 [node name="ExportSessionsDialog" type="FileDialog" parent="SettingsPanel"]
 title = "Export Sessions"
 size = Vector2i(480, 400)

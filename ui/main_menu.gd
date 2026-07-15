@@ -12,6 +12,11 @@ extends Control
 @onready var delete_sessions_button: Button = $SettingsPanel/SettingsScroll/SettingsContent/SessionButtons/DeleteSessionsButton
 @onready var export_sessions_dialog: FileDialog = $SettingsPanel/ExportSessionsDialog
 @onready var delete_sessions_confirm: ConfirmationDialog = $SettingsPanel/DeleteSessionsConfirm
+@onready var pilot_url_edit: LineEdit = $SettingsPanel/SettingsScroll/SettingsContent/PilotUrlEdit
+@onready var pilot_key_edit: LineEdit = $SettingsPanel/SettingsScroll/SettingsContent/PilotKeyEdit
+@onready var save_pilot_config_button: Button = $SettingsPanel/SettingsScroll/SettingsContent/SavePilotConfigButton
+@onready var pilot_upload_check: CheckBox = $SettingsPanel/SettingsScroll/SettingsContent/PilotUploadCheck
+@onready var pilot_status_label: Label = $SettingsPanel/SettingsScroll/SettingsContent/PilotStatusLabel
 
 func _ready() -> void:
 	settings_panel.visible = false
@@ -39,6 +44,13 @@ func _ready() -> void:
 		export_sessions_button.tooltip_text = "Needs a browser file API (JavaScriptBridge) - TODO"
 
 	delete_sessions_confirm.confirmed.connect(_on_delete_sessions_confirmed)
+
+	pilot_url_edit.text = PilotUploadService.get_url()
+	pilot_key_edit.text = PilotUploadService.get_anon_key()
+	pilot_upload_check.button_pressed = PilotUploadService.is_enabled()
+	save_pilot_config_button.pressed.connect(_on_save_pilot_config_pressed)
+	pilot_upload_check.toggled.connect(_on_pilot_upload_toggled)
+	_refresh_pilot_status()
 
 	_refresh_sessions_status()
 
@@ -84,3 +96,19 @@ func _on_delete_sessions_pressed() -> void:
 func _on_delete_sessions_confirmed() -> void:
 	SessionLogger.delete_all_sessions()
 	_refresh_sessions_status()
+
+func _on_save_pilot_config_pressed() -> void:
+	PilotUploadService.set_config(pilot_url_edit.text, pilot_key_edit.text)
+	_refresh_pilot_status()
+
+func _on_pilot_upload_toggled(enabled: bool) -> void:
+	PilotUploadService.set_enabled(enabled)
+	_refresh_pilot_status()
+
+func _refresh_pilot_status() -> void:
+	if not PilotUploadService.is_configured():
+		pilot_status_label.text = "Not configured"
+	elif PilotUploadService.is_enabled():
+		pilot_status_label.text = "Configured - uploading check-ins"
+	else:
+		pilot_status_label.text = "Configured - upload off"
