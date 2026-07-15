@@ -22,6 +22,7 @@ config/features=PackedStringArray("4.7")
 
 AffectiveEngine="*res://affective/affective_engine.gd"
 GameSession="*res://game/game_session.gd"
+PilotUploadService="*res://affective/pilot_upload_service.gd"
 
 [display]
 

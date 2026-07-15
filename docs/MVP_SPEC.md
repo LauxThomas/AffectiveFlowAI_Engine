@@ -411,3 +411,50 @@ Deleted only that one test-created session file (not a blanket
 machine yet, confirmed first, but the distinction matters for anyone running
 this test with real data present). Clean headless import and Web export.
 Branched fresh off `main`.
+
+## Same branch: optional pilot-study upload (Supabase) - IMPORTANT: changes the "no network calls" claim
+User asked how to actually get pilot/evaluation data off-device, since
+`SessionLogger` only writes to `user://` (manual Export button is the only
+existing path). Added an opt-in upload path, scoped as narrowly as possible:
+
+- New `affective/pilot_upload_service.gd` (autoload `PilotUploadService`, no
+  `class_name`): holds a Supabase project URL + anon key (entered by the
+  researcher in Settings, persisted to `user://pilot_config.json`, not
+  committed to git - the repo ships with zero credentials in it), and an
+  `enabled` flag. `is_enabled()` requires both a saved config AND the
+  checkbox on - inert otherwise.
+- **Deliberately uploads self-report check-ins only, never the per-150ms
+  tick log.** A check-in is a handful of values the player chose to submit;
+  the full tick stream is continuous behavioral telemetry and stays
+  local-only exactly as before. `AffectiveEngine.log_self_report()` now
+  calls both `_logger.log_self_report()` (existing, local, unchanged) and
+  `PilotUploadService.upload_self_report()` (new, additional, no-ops unless
+  configured+enabled) - the local save was never conditional on the remote
+  one, so a failed/offline upload can't lose the local copy.
+- Upload is a single fire-and-forget `HTTPRequest` POST to
+  `<url>/rest/v1/pilot_sessions`, keyed by a persistent-but-anonymous
+  per-install participant id (`user://pilot_participant_id.txt`, generated
+  once, unrelated to `SessionLogger`'s own per-session UUIDs) so a
+  researcher can correlate one participant's check-ins across multiple play
+  sessions.
+- Settings gained a "Pilot study upload" section: URL/key fields (key field
+  is `secret = true`), a Save button, an upload checkbox, and a status
+  label. Text explicitly says this is for researchers/pilot testers and
+  requires session logging to also be on.
+
+**This measurably changes a claim in `docs/TECHNICAL_BRIEF.md`** ("no
+network calls anywhere in the codebase... a hard architectural constraint").
+That's no longer literally true once this ships - it's now true of the
+*default* configuration, not the codebase unconditionally. The brief needs a
+correction, not just an addition; flagged to the user directly rather than
+silently patched, since this was stated as a hard technical/investor claim.
+
+Verified: headless import and Web export both clean (`PilotUploadService`
+registers as an autoload with no errors). Runtime test (temporary `-s`
+script, same `get_node("/root/...")` pattern as the self-report test):
+confirmed default state is unconfigured/disabled, confirmed
+`set_config()`/`set_enabled()` round-trip through `is_configured()`/
+`is_enabled()`, and confirmed calling `log_self_report()` with a pointed-at
+a non-existent Supabase project doesn't throw or block (fire-and-forget, as
+designed) - then reset the local config back to empty so no test state was
+left in `user://`.
